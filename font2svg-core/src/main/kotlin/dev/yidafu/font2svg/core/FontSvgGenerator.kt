@@ -2,13 +2,23 @@ package dev.yidafu.font2svg.core
 
 import com.github.nwillc.ksvg.RenderMode
 import com.github.nwillc.ksvg.elements.SVG
+import dev.yidafu.font2svg.dev.yidafu.font2svg.core.SvgLineCmd
+import dev.yidafu.font2svg.dev.yidafu.font2svg.core.Vertex
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.util.freetype.FT_Face
 import org.lwjgl.util.freetype.FT_Outline_Funcs
-import org.lwjgl.util.freetype.FT_Vector
 import org.lwjgl.util.freetype.FreeType
 import java.io.Closeable
+import kotlin.math.max
 
+/**
+ *
+ * [PrimogemStudio/Advanced-Framework ~ FreeTypeFont.kt](https://github.com/PrimogemStudio/Advanced-Framework/blob/73e383733257a9494afac5a1190adec21131b80d/fontengine/src/main/java/com/primogemstudio/advancedfmk/fontengine/gen/FreeTypeFont.kt)
+ *
+ * @author yidafu
+ */
 class FontSvgGenerator(fontFilepath: String): Closeable {
 
     private var face: FT_Face
@@ -24,7 +34,7 @@ class FontSvgGenerator(fontFilepath: String): Closeable {
             val facePointer = stack.mallocPointer(1)
 
             val err2 = FreeType.FT_New_Face(library, fontFilepath, 0, facePointer)
-
+            check(err2 == FreeType.FT_Err_Ok) { "Failed to create new face: " + FreeType.FT_Error_String(err2)}
             face = FT_Face.create(facePointer[0])
 
             FreeType.FT_Set_Pixel_Sizes(
@@ -35,7 +45,7 @@ class FontSvgGenerator(fontFilepath: String): Closeable {
     }
 
     fun generateSvg(char: Long): String {
-        val glyph_index = FreeType.FT_Get_Char_Index(face, char.toChar().toLong());
+        val glyph_index = FreeType.FT_Get_Char_Index(face, char);
         val error3 = FreeType.FT_Load_Glyph(
             face,
             glyph_index,
@@ -45,39 +55,33 @@ class FontSvgGenerator(fontFilepath: String): Closeable {
         val glyph = face.glyph()
         val metrics = glyph?.metrics()
 
-        val paths = mutableListOf<String>()
 
+        val svgPaths = mutableListOf<SvgLineCmd>()
         val funcs = FT_Outline_Funcs.create().move_to { to, _ ->
-            val p = addrToVec(to)
-            paths.add("M ${p.first} ${p.second}")
+            svgPaths.add(SvgLineCmd.MoveTo(Vertex.from(to)))
             0
         }.line_to {to,_ ->
-            val p = addrToVec(to)
-
-            paths.add("L ${p.first} ${p.second}")
+            svgPaths.add(SvgLineCmd.LineTo(Vertex.from(to)))
             0
         }.conic_to { ct, to, _ ->
-            val p = addrToVec(to)
-            val c1 = addrToVec(ct)
-            paths.add("Q ${c1.first} ${c1.second}, ${p.first} ${p.second}")
+            svgPaths.add(SvgLineCmd.QuadraticBezierCurveTo(Vertex.from(ct), Vertex.from(to)))
             0
         }.cubic_to { ct1, ct2, to, _ ->
-
-            val p = addrToVec(to)
-            val c1 = addrToVec(ct1)
-            val c2 = addrToVec(ct2)
-            paths.add("C ${c1.first} ${c1.second}, ${c2.first} ${c2.second}, ${p.first} ${p.second}")
+            svgPaths.add(SvgLineCmd.CubicBezierCurveTo(Vertex.from(ct1), Vertex.from(ct2), Vertex.from(to)))
             0
         }
-        FreeType.FT_Outline_Decompose(glyph?.outline()!!, funcs, 1)
+        FreeType.FT_Outline_Decompose(glyph!!.outline(), funcs, 1)
 
+
+        val vWidth1 = max(metrics?.width() ?: 0, metrics?.horiAdvance() ?: 0)
+        val minY = -face.ascender()
 
         val svg = SVG.svg {
             width = (metrics?.width() ?: 800).toString()
             height = (metrics?.height() ?: 800).toString()
-            viewBox = "0 ${-face.ascender()} ${metrics?.horiAdvance()} ${face.ascender() - face.descender()}"
+            viewBox = "0 $minY $vWidth1 ${face.height()}"
             path {
-                d = paths.joinToString(" ")
+                d = svgPaths.joinToString(" ") { cmd -> cmd.toString() }
                 fill = "red"
             }
         }
@@ -86,6 +90,7 @@ class FontSvgGenerator(fontFilepath: String): Closeable {
 
         return builder.toString()
     }
+
     fun getAllChars(): List<Long> {
         val map = mutableListOf<Long>()
 
@@ -99,9 +104,12 @@ class FontSvgGenerator(fontFilepath: String): Closeable {
         return map
     }
 
-    private fun addrToVec(addr: Long): Pair<Int, Int> {
-        val vec = FT_Vector.create(addr)
-        return vec.x().toInt() to vec.y().toInt()
+    fun generateAll(): Flow<Pair<Long, String>> {
+        return flow {
+            getAllChars().forEach {
+                emit(Pair(it, generateSvg(it)))
+            }
+        }
     }
 
     override fun close() {

@@ -46,6 +46,7 @@ dependencies {
 
     implementation("org.lwjgl", "lwjgl")
     implementation("org.lwjgl", "lwjgl-freetype")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-freetype", classifier = lwjglNatives)
 }
