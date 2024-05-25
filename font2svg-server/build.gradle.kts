@@ -35,14 +35,16 @@ dependencies {
   implementation("io.vertx:vertx-web")
   implementation("io.vertx:vertx-mysql-client")
   implementation("io.vertx:vertx-web-sstore-cookie")
+  implementation("io.insert-koin:koin-core:3.5.6")
   implementation("io.vertx:vertx-lang-kotlin-coroutines")
-  implementation("io.vertx:vertx-json-schema")
-  implementation("io.vertx:vertx-web-openapi-router")
   implementation("io.vertx:vertx-shell")
   implementation("io.vertx:vertx-web-sstore-redis")
-  implementation("io.vertx:vertx-web-api-contract")
   implementation("io.vertx:vertx-lang-kotlin")
   implementation(kotlin("stdlib-jdk8"))
+
+  implementation("org.hibernate.reactive:hibernate-reactive-core:2.3.0.Final")
+  implementation("org.testcontainers:mysql:1.19.8")
+
   testImplementation("io.vertx:vertx-junit5")
   testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
 }
