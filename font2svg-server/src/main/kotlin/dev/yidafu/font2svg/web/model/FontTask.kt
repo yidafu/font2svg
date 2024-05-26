@@ -2,8 +2,6 @@ package dev.yidafu.font2svg.web.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
@@ -13,15 +11,27 @@ data class FontTask(
   val fontFamily: String,
 
   @Column(name = "file_size")
-  val fileSize: Int,
+  val fileSize: Long,
 
   @Column(name = "total_count")
-  val glyphCount: Int,
+  val tobalCount: Int,
 
   @Column(name = "generate_count")
   val generateCount: Int,
 
+  @Column(name = "temp_filepath")
+  val tempFilepath: String,
+
   @Column(name = "status")
   val status: Int,
 
-) : FontBaseEntity()
+  @Column(name = "font_face_id")
+  val fontFaceId: Long,
+
+  ) : FontBaseEntity() {
+    constructor(): this("", 0, 0, 0, "", 0, 0)
+
+    fun increase(count: Int): FontTask {
+      return FontTask(fontFamily, fileSize, tobalCount, generateCount + count, tempFilepath, status, fontFaceId)
+    }
+  }

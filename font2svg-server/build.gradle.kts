@@ -18,7 +18,7 @@ repositories {
 val vertxVersion = "4.5.7"
 val junitJupiterVersion = "5.9.1"
 
-val mainVerticleName = "dev.yidafu.font2svg.MainVerticle"
+val mainVerticleName = "dev.yidafu.font2svg.web.MainVerticle"
 val launcherClassName = "io.vertx.core.Launcher"
 
 val watchForChange = "src/**/*"
@@ -30,21 +30,28 @@ application {
 
 dependencies {
   implementation(platform("io.vertx:vertx-stack-depchain:$vertxVersion"))
+  implementation("io.vertx:vertx-config")
+  implementation("io.vertx:vertx-config-yaml")
+  implementation("io.vertx:vertx-json-schema")
   implementation("io.vertx:vertx-web-validation")
-  implementation("io.vertx:vertx-auth-jwt")
   implementation("io.vertx:vertx-web")
   implementation("io.vertx:vertx-mysql-client")
   implementation("io.vertx:vertx-web-sstore-cookie")
   implementation("io.insert-koin:koin-core:3.5.6")
+  implementation("io.vertx:vertx-web-client")
   implementation("io.vertx:vertx-lang-kotlin-coroutines")
   implementation("io.vertx:vertx-shell")
   implementation("io.vertx:vertx-web-sstore-redis")
   implementation("io.vertx:vertx-lang-kotlin")
   implementation(kotlin("stdlib-jdk8"))
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+
+  implementation("io.quarkus:quarkus-hibernate-reactive-panache-kotlin-parent:3.11.0")
 
   implementation("org.hibernate.reactive:hibernate-reactive-core:2.3.0.Final")
   implementation("org.testcontainers:mysql:1.19.8")
 
+  implementation(project(":font2svg-core"))
   testImplementation("io.vertx:vertx-junit5")
   testImplementation("org.junit.jupiter:junit-jupiter:$junitJupiterVersion")
 }
