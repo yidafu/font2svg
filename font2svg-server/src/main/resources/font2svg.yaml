@@ -1,0 +1,5 @@
+app:
+  assets:
+    static-dir: "/Users/dovyih/github/font2svg/font2svg-server/font2svg2"
+server:
+  port: 8888
