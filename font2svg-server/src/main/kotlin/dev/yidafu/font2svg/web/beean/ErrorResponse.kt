@@ -9,3 +9,6 @@ class FontAlreadyExists(filename: String) : ErrorResponse(1001, "font '$filename
 class OpenTempFileFailed(filename: String) : ErrorResponse(1002, "open temp file '$filename' failed")
 
 class WriteFileFailed() : ErrorResponse(1003, "write file failed")
+
+class FontFaceNotExist: ErrorResponse(1004, "font face not exist")
+class ContentNotFound: ErrorResponse(404, "404 Not Found")

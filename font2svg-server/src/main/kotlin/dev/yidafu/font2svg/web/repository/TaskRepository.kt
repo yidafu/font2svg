@@ -1,6 +1,7 @@
 package dev.yidafu.font2svg.web.repository
 
 import dev.yidafu.font2svg.web.model.FontTask
+import dev.yidafu.font2svg.web.model.FontTaskStatus
 import io.vertx.kotlin.coroutines.coAwait
 import io.vertx.kotlin.coroutines.vertxFuture
 import kotlinx.coroutines.*
@@ -15,10 +16,13 @@ class TaskRepository(
 ) : KoinComponent {
   private val sessionFactory: Stage.SessionFactory by inject()
 
-  suspend fun findAll() {
-    sessionFactory.withSession { session ->
-      session.find(FontTask::class.java)
-    }.toCompletableFuture().await()
+  suspend fun findAll(): List<FontTask> {
+    return sessionFactory.withSession { session ->
+      val builder = sessionFactory.criteriaBuilder
+      val query = builder.createQuery(FontTask::class.java)
+      query.from(FontTask::class.java)
+      session.createQuery(query).resultList
+    }.toCompletableFuture().await() ?: emptyList()
   }
 
   suspend fun findById(id: Long): FontTask? {
@@ -39,9 +43,26 @@ class TaskRepository(
     return task.id?.let { findById(it) }
   }
 
+  suspend fun updateStatus(taskId: Long, status: FontTaskStatus): Boolean {
+    val task = findById(taskId) ?: return false
+
+    sessionFactory.withSession { seession ->
+      vertxFuture {
+        val builder = sessionFactory.criteriaBuilder
+        val update = builder.createCriteriaUpdate(FontTask::class.java)
+        val from = update.from(FontTask::class.java)
+        update.set(FontTask::status.name, status)
+        update.where(builder.equal(from.get<String>(FontTask::id.name), task.id))
+
+        seession.createQuery(update).executeUpdate().await()
+      }.toCompletionStage()
+    }.await()
+    return true
+  }
+
   suspend fun updateProcess(taskId: Long, increaseCount: Int): Boolean {
       val task = findById(taskId) ?: return false
-    println("task generate count ${task.generateCount}")
+
     sessionFactory.withSession { seession ->
         vertxFuture {
           val builder = sessionFactory.criteriaBuilder
@@ -51,6 +72,7 @@ class TaskRepository(
           update.where(builder.equal(from.get<String>(FontTask::id.name), task.id))
 
           seession.createQuery(update).executeUpdate().await()
+          seession.flush().await()
         }.toCompletionStage()
       }.await()
     return true

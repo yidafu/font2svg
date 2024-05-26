@@ -1,27 +1,106 @@
 package dev.yidafu.font2svg.web.routers
 
+import dev.yidafu.font2svg.web.beean.ContentNotFound
+import dev.yidafu.font2svg.web.beean.FontFaceNotExist
+import dev.yidafu.font2svg.web.beean.PageDTO
+import dev.yidafu.font2svg.web.repository.FontFaceRepository
+import dev.yidafu.font2svg.web.repository.FontGlyphRepository
 import io.vertx.core.Vertx
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.ext.web.validation.builder.Parameters
+import io.vertx.ext.web.validation.builder.ValidationHandlerBuilder
+import io.vertx.json.schema.SchemaParser
+import io.vertx.json.schema.SchemaRouter
+import io.vertx.json.schema.SchemaRouterOptions
+import io.vertx.json.schema.common.dsl.Schemas.numberSchema
 import io.vertx.kotlin.coroutines.CoroutineRouterSupport
 import io.vertx.kotlin.coroutines.coroutineRouter
-import kotlinx.coroutines.coroutineScope
 
 inline fun CoroutineRouterSupport.createFontRoute(vertx: Vertx): Router = Router.router(vertx).apply {
   coroutineRouter {
-    get("/list").handler {
+    route().handler(BodyHandler.create())
 
+    val schemaRouter = SchemaRouter.create(vertx, SchemaRouterOptions())
+    val schemaParser = SchemaParser.createDraft7SchemaParser(schemaRouter)
+
+
+
+    get("/:id")
+      .handler(
+        ValidationHandlerBuilder
+          .create(schemaParser)
+          .pathParameter(Parameters.param("id", numberSchema()))
+          .build()
+      )
+      .coHandler { ctx ->
+        val faceRepo = FontFaceRepository()
+        val fontFaceId = ctx.pathParam("id").toLong()
+        val fontFace = faceRepo.getById(fontFaceId)
+        if (fontFace == null) {
+          ctx.json(ContentNotFound())
+        } else {
+          ctx.json(fontFace)
+        }
+      }
+
+    get("/all").coHandler { ctx ->
+      val fontRepo = FontFaceRepository()
+      val list = fontRepo.getAll()
+      ctx.json(list)
     }
 
-    get("/all").handler {
-      it.response().end("font all")
-    }
+    get("/:id/glyph/:glyphId")
+      .handler(
+        ValidationHandlerBuilder
+          .create(schemaParser)
+          .pathParameter(Parameters.param("id", numberSchema()))
+          .pathParameter(Parameters.param("glyphId", numberSchema()))
+          .build()
+      )
+      .coHandler { ctx ->
+        val fontFaceId = ctx.pathParam("id").toLong()
+        val fontGlyphId = ctx.pathParam("glyphId").toLong()
 
-    get("/:id").handler {
-      it.response().end("font " + it.request().getParam("id"))
-    }
+        val glyphRepo = FontGlyphRepository()
+        val fontRepo = FontFaceRepository()
+        val face = fontRepo.getById(fontFaceId)
+        if (face == null) {
+          ctx.json(FontFaceNotExist())
+          return@coHandler
+        }
+        val glyph = glyphRepo.getByFontFaceAndGlyphId(fontFaceId, fontGlyphId)
+        if (glyph == null) {
+          ctx.json(ContentNotFound())
+        } else {
+          ctx.json(glyph)
+        }
+      }
 
-    get("/:id/list").handler {
+    get("/:id/glyphs")
+      .handler(
+        ValidationHandlerBuilder
+          .create(schemaParser)
+          .pathParameter(Parameters.param("id", numberSchema()))
+          .queryParameter(Parameters.optionalParam("page", numberSchema()))
+          .queryParameter(Parameters.optionalParam("size", numberSchema()))
+          .build()
+      )
+      .coHandler {ctx ->
+        val fontFaceId = ctx.pathParam("id").toLong()
+        val page: Int = ctx.queryParam("page").let { arr -> if (arr.isEmpty()) 1 else arr[0].toInt() }
+        val size: Int = ctx.queryParam("size").let { arr -> if (arr.isEmpty()) 20 else arr[0].toInt()  }
 
-    }
+        val glyphRepo = FontGlyphRepository()
+        val fontRepo = FontFaceRepository()
+        val face = fontRepo.getById(fontFaceId)
+        if (face == null) {
+          ctx.json(FontFaceNotExist())
+        } else {
+          val list = glyphRepo.getListByPage(fontFaceId, page, size)
+
+          ctx.json(PageDTO(face.glyphCount, list))
+        }
+      }
   }
 }

@@ -10,8 +10,10 @@ import dev.yidafu.font2svg.web.repository.TaskRepository
 import dev.yidafu.font2svg.web.ext.writeFileAsync
 import dev.yidafu.font2svg.web.model.FontFace
 import dev.yidafu.font2svg.web.model.FontGlyph
+import dev.yidafu.font2svg.web.model.FontTaskStatus
 import dev.yidafu.font2svg.web.repository.ConfigRepository
 import dev.yidafu.font2svg.web.repository.FontFaceRepository
+import dev.yidafu.font2svg.web.repository.FontGlyphRepository
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.ext.web.Router
@@ -42,15 +44,15 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
     val taskRepo = TaskRepository()
     val faceRepo = FontFaceRepository()
     val configRepo = ConfigRepository()
-    get("/list").coHandler { ctx ->
-      println("enter /tasks/list")
-
-      val list = taskRepo.findAll()
-      ctx.json(list)
-    }
+    val glyphRepo = FontGlyphRepository()
 
     val schemaRouter = SchemaRouter.create(vertx, SchemaRouterOptions())
     val schemaParser = SchemaParser.createDraft7SchemaParser(schemaRouter)
+
+    get("/list").coHandler { ctx ->
+      val list = taskRepo.findAll()
+      ctx.json(list)
+    }
 
     post("/")
       .handler(
@@ -87,12 +89,12 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
         generator.use {
           val allCharList = generator.getAllChars()
 
-          val face = FontFace(createDTO.fontFamily!!, allCharList.size, fontFile.length())
+          val face = FontFace(createDTO.fontFamily!!, 0, fontFile.length())
           faceRepo.create(face)
 
-          val task = FontTask(createDTO.fontFamily, fontFile.length(), allCharList.size, 0, tempFilepath, 0, face.id!!)
+          val task = FontTask(createDTO.fontFamily, fontFile.length(), allCharList.size, 0, tempFilepath, FontTaskStatus.Created, face.id!!)
           val newTask = taskRepo.createTask(task)
-          println("new task ${newTask?.id}")
+
           vertx.eventBus().send(FONT_GENERATION_EVENT, newTask?.id)
           ctx.json(task)
         }
@@ -102,8 +104,9 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
       .handler { msg ->
         vertxFuture {
           val taskId = msg.body()
-          println("generate task $taskId")
+          taskRepo.updateStatus(taskId, FontTaskStatus.Generating)
           val task = taskRepo.findById(taskId) ?: return@vertxFuture
+          val fontFaceId = task.fontFaceId
           val generator = FontSvgGenerator(task.tempFilepath)
           val fs = vertx.fileSystem()
 
@@ -114,13 +117,12 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
               .buffer(100, BufferOverflow.SUSPEND)
               .chunked(20)
               .collect { list ->
-                try {
                   val glyphs = list.map {
                     val (charCode, svg) = it
                     val charText = charCode.toCharacter()
-                    FontGlyph(0, charText, charCode, svg)
+                    FontGlyph(fontFaceId, charText, charCode, svg)
                   }
-                  faceRepo.saveGlyphs(glyphs)
+                  glyphRepo.saveGlyphs(glyphs)
 
                   glyphs.forEach { glyph ->
                     fs.writeFileAsync(
@@ -128,22 +130,16 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
                       Buffer.buffer(glyph.svgContent)
                     )
                   }
-
+                  faceRepo.updateGlyphCount(task.fontFaceId, list.size)
                   taskRepo.updateProcess(task.id!!, list.size)
 
-                } catch (e: Exception) {
-                  e.printStackTrace()
-                }
 
+                taskRepo.updateStatus(taskId, FontTaskStatus.Done)
               }
           }
         }
       }
 
-    post("/create").handler { ctx ->
-      println("ctx body ${ctx.body().asJsonObject()}")
-      ctx.json("create")
-    }
 
     delete("/:id").handler {
 

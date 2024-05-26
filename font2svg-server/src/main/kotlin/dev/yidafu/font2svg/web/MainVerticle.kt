@@ -4,6 +4,7 @@ import dev.yidafu.font2svg.web.beean.ErrorResponse
 import dev.yidafu.font2svg.web.config.Font2SvgConfig
 import dev.yidafu.font2svg.web.repository.ConfigRepository
 import dev.yidafu.font2svg.web.repository.FontFaceRepository
+import dev.yidafu.font2svg.web.repository.FontGlyphRepository
 import dev.yidafu.font2svg.web.repository.TaskRepository
 import dev.yidafu.font2svg.web.routers.createAssetRoute
 import dev.yidafu.font2svg.web.routers.createFileRoute
@@ -50,6 +51,7 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
       single { ConfigRepository() }
       single { TaskRepository() }
       single { FontFaceRepository() }
+      single { FontGlyphRepository() }
 
 
       single<Font2SvgConfig> { config }
