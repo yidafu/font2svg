@@ -5,6 +5,7 @@ import dev.yidafu.font2svg.web.beean.CreateTaskDTO
 import dev.yidafu.font2svg.web.beean.WriteFileFailed
 import dev.yidafu.font2svg.web.ext.chunked
 import dev.yidafu.font2svg.web.ext.toCharacter
+import dev.yidafu.font2svg.web.ext.toSvgGlyph
 import dev.yidafu.font2svg.web.model.FontTask
 import dev.yidafu.font2svg.web.repository.TaskRepository
 import dev.yidafu.font2svg.web.ext.writeFileAsync
@@ -120,15 +121,15 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
                   val glyphs = list.map {
                     val (charCode, svg) = it
                     val charText = charCode.toCharacter()
-                    FontGlyph(fontFaceId, charText, charCode, svg)
+                    FontGlyph(fontFaceId, charText, charCode, svg.viewBox, svg.path, svg.ascender, svg.descender)
                   }
                   glyphRepo.saveGlyphs(glyphs)
 
                   glyphs.forEach { glyph ->
-                    fs.writeFileAsync(
-                      Paths.get(fontFaceSvgDir, glyph.charCode.toString() + ".svg").toString(),
-                      Buffer.buffer(glyph.svgContent)
-                    )
+                    val svg = FontSvgGenerator.glyphToSvgString(glyph.toSvgGlyph(), 16, "currentColor")
+
+                    val svgPath = Paths.get(fontFaceSvgDir, "${glyph.charCode}.svg").toString()
+                    fs.writeFileAsync(svgPath, Buffer.buffer(svg))
                   }
                   faceRepo.updateGlyphCount(task.fontFaceId, list.size)
                   taskRepo.updateProcess(task.id!!, list.size)

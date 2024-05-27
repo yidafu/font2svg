@@ -3,7 +3,6 @@ package dev.yidafu.font2svg.web.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
-import org.hibernate.annotations.Type
 
 @Entity
 @Table(name = "font_glyph")
@@ -14,9 +13,15 @@ class FontGlyph(
   val charText: String,
   @Column(name = "char_code")
   val charCode: Long,
-  @Column(name = "svg_content", columnDefinition = "Text")
-  val svgContent: String,
+  @Column(name = "view_box")
+  val viewBox: String,
+  @Column(name = "svg_path", columnDefinition = "Text")
+  val svgPath: String,
+  @Column(name = "svg_ascender")
+  val svgAscender: Int,
+  @Column(name = "svg_descender")
+  val svgDescender: Int,
 ) : FontBaseEntity() {
 
-  constructor() : this(0,"", 0, "")
+  constructor() : this(0,"", 0, "", "", 0, 0)
 }
