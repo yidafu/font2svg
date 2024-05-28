@@ -1,21 +1,15 @@
 package dev.yidafu.font2svg.web.routers
 
-import dev.yidafu.font2svg.core.FontSvgGenerator
-import dev.yidafu.font2svg.dev.yidafu.font2svg.core.SvgGlyph
-import dev.yidafu.font2svg.web.beean.FontFaceNotExist
-import dev.yidafu.font2svg.web.ext.toSvgGlyph
+import com.mayakapps.kache.InMemoryKache
+import com.mayakapps.kache.KacheStrategy
 import dev.yidafu.font2svg.web.ext.writeFileAsync
 import dev.yidafu.font2svg.web.repository.ConfigRepository
-import dev.yidafu.font2svg.web.repository.FontFaceRepository
-import dev.yidafu.font2svg.web.repository.FontGlyphRepository
+import dev.yidafu.font2svg.web.service.FontService
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpHeaders
-import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.impl.MimeMapping
 import io.vertx.ext.web.Router
-import io.vertx.ext.web.handler.BodyHandler
-import io.vertx.ext.web.handler.CorsHandler
 import io.vertx.ext.web.handler.FileSystemAccess
 import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.ext.web.validation.builder.Parameters
@@ -23,13 +17,16 @@ import io.vertx.ext.web.validation.builder.ValidationHandlerBuilder
 import io.vertx.json.schema.SchemaParser
 import io.vertx.json.schema.SchemaRouter
 import io.vertx.json.schema.SchemaRouterOptions
-import io.vertx.json.schema.common.dsl.Schemas
 import io.vertx.json.schema.common.dsl.Schemas.*
 import io.vertx.kotlin.coroutines.CoroutineRouterSupport
 import io.vertx.kotlin.coroutines.coroutineRouter
 import java.nio.file.Paths
+import kotlin.time.Duration.Companion.days
 
-
+val cache = InMemoryKache<String, String>(200 * 1024 * 1024) {
+  strategy = KacheStrategy.LRU
+  expireAfterAccessDuration = 3.days
+}
 inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
   Router.router(vertx).apply {
     coroutineRouter {
@@ -72,24 +69,21 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
           val fontSize: Int = ctx.queryParam("fontSize").let { if (it.isEmpty()) 16 else it[0].toInt() }
           val color: String = ctx.queryParam("color").let { if (it.isEmpty()) "#000000" else it[0] }
 
-          val faceRepo = FontFaceRepository()
-
-          val fontFace = faceRepo.getByName(fontFamily)
-          if (fontFace == null) {
-            ctx.json(FontFaceNotExist())
+          // in memory cache for performance
+          val key = "$fontFamily-$charCode-$fontSize-$color"
+          cache.get(key)?.let {svg ->
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
+            ctx.response().end(svg)
             return@coHandler
           }
-          val glyphRepo = FontGlyphRepository()
-          val glyph = glyphRepo.getByFontFaceAndCharCode(fontFace.id!!, charCode)
-          if (glyph != null) {
-            val svgGlyph = glyph.toSvgGlyph()
-            val svgContent = FontSvgGenerator.glyphToSvgString(svgGlyph, fontSize, color)
+          val service = FontService()
 
+          service.getGlyph(fontFamily, charCode, fontSize, color)?.let { svg ->
             ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
-            ctx.response().end(svgContent)
-          } else {
+            ctx.response().end(svg)
+          } ?: run {
             ctx.response().statusCode = 404
-            ctx.response().end("404")
+            ctx.response().end()
           }
         }
       /**
@@ -100,33 +94,27 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
         // 本地资源不存在，从数据库获取
         .coHandler { ctx ->
           val paths = ctx.normalizedPath().split("/")
-          println("paths ${paths.joinToString(" | ")}")
           if (paths.size == 4) {
             ctx.json("")
             return@coHandler
           }
-          val faceRepo = FontFaceRepository()
-          val name = paths[3]
+
+          val fontFamily = paths[3]
           val charCode = paths[4].replace(".svg", "").toLong()
 
-          val fontFace = faceRepo.getByName(name)
-          if (fontFace == null) {
-            ctx.json(FontFaceNotExist())
-            return@coHandler
-          }
-          val glyphRepo = FontGlyphRepository()
-          val glyph = glyphRepo.getByFontFaceAndCharCode(fontFace.id!!, charCode)
-          if (glyph != null) {
-            val fs = vertx.fileSystem()
-            val svg = FontSvgGenerator.glyphToSvgString(glyph.toSvgGlyph(), 16, "currentColor")
+          val service = FontService()
 
-            val svgPath = Paths.get(configRepo.svgStaticAssetsPath, fontFace.name, "$charCode.svg").toString()
+          service.getGlyph(fontFamily, charCode, 16, "currentColor")?.let { svg ->
+            val fs = vertx.fileSystem()
+            val svgPath = Paths.get(configRepo.svgStaticAssetsPath, fontFamily, "$charCode.svg").toString()
+
             fs.writeFileAsync(svgPath, Buffer.buffer(svg))
+
             ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
             ctx.response().end(svg)
-          } else {
+          } ?: run {
             ctx.response().statusCode = 404
-            ctx.response().end("404")
+            ctx.response().end()
           }
         }
     }

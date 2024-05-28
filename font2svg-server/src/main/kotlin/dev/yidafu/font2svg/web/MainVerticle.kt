@@ -10,6 +10,7 @@ import dev.yidafu.font2svg.web.routers.createAssetRoute
 import dev.yidafu.font2svg.web.routers.createFileRoute
 import dev.yidafu.font2svg.web.routers.createFontRoute
 import dev.yidafu.font2svg.web.routers.createTaskRoute
+import dev.yidafu.font2svg.web.service.FontService
 import io.vertx.config.ConfigRetriever
 import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
@@ -52,6 +53,7 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
       single { TaskRepository() }
       single { FontFaceRepository() }
       single { FontGlyphRepository() }
+      single { FontService() }
 
 
       single<Font2SvgConfig> { config }
