@@ -1,8 +1,19 @@
-interface IElement {
-  tagName: string,
-    properties: Record < string, string >
-    children: IElement[]
+export interface IElement extends INode {
+  tagName: string;
+  children: ISvgElement[]
 }
+
+export interface IText extends INode {
+  value: string;
+  tagName: 'text'
+}
+
+export interface INode {
+  tagName: string,
+  properties: Record<string, string>
+}
+
+type ISvgElement = IElement | IText
 
 
 const CHAR_A = 65
@@ -13,7 +24,7 @@ const CHAT_z = 122
 const CHAT_0 = 48
 const CHAT_9 = 57
 
-export function parse(source: string) {
+export function parse(source: string): IElement {
   let index = 0;
   let char = source[index];
   const root = {
@@ -37,10 +48,12 @@ export function parse(source: string) {
   function eof() {
     return index >= source.length;
   }
-  function validChar(char) {
+
+  function validChar(char: string) {
     const code = char.charCodeAt(0)
     return (code >= CHAR_A && code <= CHAT_Z) || (code >= CHAT_a && code <= CHAT_z) || (code >= CHAT_0 && code <= CHAT_9);
   }
+
   function isWhitespace() {
     return char === ' ' || char === '\n' || char === '\r' || char === '\t'
   }
@@ -67,10 +80,10 @@ export function parse(source: string) {
       next()
     }
     if (text.length > 0) {
-      const textNode: IElement = {
+      const textNode: IText = {
         tagName: 'text',
         properties: {},
-        children: [text]
+        value: text,
       }
       currentElement.children.push(textNode)
     }
@@ -92,6 +105,7 @@ export function parse(source: string) {
     }
     return value;
   }
+
   function comment() {
     next(); // skip !
     next() // skip -
@@ -111,16 +125,16 @@ export function parse(source: string) {
   }
 
   function doctype() {
-     while(!eof() && char == '>') {
-        next()
-     }
-     next() // skip >
+    while (!eof() && char == '>') {
+      next()
+    }
+    next() // skip >
   }
 
   function header() {
     next() // skip ?
-    while(!eof()) {
-      if (char === '?' && peek(1) === '>')  {
+    while (!eof()) {
+      if (char === '?' && peek(1) === '>') {
         next() // skip ?
         next() // skip >
         break;
@@ -128,8 +142,9 @@ export function parse(source: string) {
       next()
     }
   }
+
   function getAttributes() {
-    let attrs = {};
+    let attrs: Record<string, string> = {};
     skipWhiteSpace();
     while (!eof() && char !== '>' && char !== '/') {
       skipWhiteSpace();
@@ -222,4 +237,28 @@ export function parse(source: string) {
   }
 
   return root
+}
+
+
+export function stringify(root: IElement) {
+  function buildSvgNode(node: ISvgElement) {
+    if (node.tagName === 'text') {
+      return (node as IText).value
+    }
+    const element = node as IElement
+    let segment = `<${element.tagName} ${Object.entries(element.properties).map(([attr, value]) => `${attr}="${value}"`).join(' ')
+      }`;
+
+    const hasChildren = element.children.length > 0
+    if (hasChildren) {
+      segment += '>'
+      segment += element.children.map(buildSvgNode).join('')
+      segment += `</${element.tagName}>`
+    } else {
+      segment += "/>"
+    }
+    return segment
+  }
+
+  return root.children.map(buildSvgNode).join('')
 }
