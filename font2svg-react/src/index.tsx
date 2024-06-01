@@ -17,6 +17,8 @@ function calcSvg(svg: string, fontSize: number): string {
 
   const rootObj: IElement = parse(svg)
   const svgObj = rootObj.children[0]
+  svgObj.properties['fill'] = 'currentColor'
+  svgObj.properties['style'] = 'display: inline;'
   const viewBox = svgObj.properties.viewBox ?? ''
   const heightStr = viewBox.trim().split(' ').at(-1) ?? '1000'
   const widthStr = viewBox.trim().split(' ').at(-2) ?? '1000'
@@ -37,6 +39,7 @@ export function createComponent(option: ICreateComponentOptions) {
   return function Font2Svg(props: IFont2SvgProps) {
     const { fontFamily, text, color = '#000', fontSize = 16, fallback } = props;
     const [svgHtml, setSvgHtml] = useState('')
+    const [originSvgList, setOriginSvgList] = useState<string[]>([])
     useEffect(() => {
       async function fetchSvg() {
         const promises = text.split('').map<Promise<string>>(char => {
@@ -45,13 +48,17 @@ export function createComponent(option: ICreateComponentOptions) {
         })
         const svgTextList = await Promise.all(promises)
 
-        const html = svgTextList.map(svg => calcSvg(svg, fontSize)).join('')
-        setSvgHtml(html)
+        setOriginSvgList(svgTextList)
       }
 
       fetchSvg()
     }, [text])
-    return <div style={{ color }} dangerouslySetInnerHTML={{ __html: svgHtml }}></div>
+
+    useEffect(() => {
+      const html = originSvgList.map(svg => calcSvg(svg, fontSize)).join('')
+      setSvgHtml(html)
+    }, [fontSize, color, originSvgList])
+    return <span style={{ color }} dangerouslySetInnerHTML={{ __html: svgHtml }}></span>
   }
 }
 
@@ -63,11 +70,11 @@ export function createDynamicComponent(option: ICreateComponentOptions) {
   return function Font2Svg(props: IFont2SvgProps) {
     const { fontFamily, text, color = '#000', fontSize = 16, fallback } = props;
 
-    return <div>
+    return <span>
       {text.split('').map(char => {
         const svgUrl = buildDynamicSvgUrl(fontFamily, char, fontSize, color)
         return <img src={svgUrl} alt={char} />
       })}
-    </div>
+    </span>
   }
 }
