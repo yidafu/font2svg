@@ -24,7 +24,8 @@ class FontGlyphRepository : KoinComponent{
   }
 
   suspend fun getByFontFaceAndGlyphId(faceId: Long, glyphId: Long): FontGlyph? {
-    return sessionFactory.withSession { session ->
+
+    return sessionFactory.withTransaction { session ->
       val builder = sessionFactory.criteriaBuilder
       val query = builder.createQuery(FontGlyph::class.java)
       val from = query.from(FontGlyph::class.java)

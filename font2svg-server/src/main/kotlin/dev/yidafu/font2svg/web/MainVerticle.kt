@@ -10,12 +10,16 @@ import dev.yidafu.font2svg.web.routers.createAssetRoute
 import dev.yidafu.font2svg.web.routers.createFileRoute
 import dev.yidafu.font2svg.web.routers.createFontRoute
 import dev.yidafu.font2svg.web.routers.createTaskRoute
+import dev.yidafu.font2svg.web.service.FontService
 import io.vertx.config.ConfigRetriever
 import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
 import io.vertx.core.json.JsonObject
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.validation.BadRequestException
 import io.vertx.ext.web.validation.BodyProcessorException
 import io.vertx.ext.web.validation.ParameterProcessorException
@@ -34,6 +38,7 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
 
   private lateinit var emf: EntityManagerFactory
 
+  private val logger: Logger = LoggerFactory.getLogger(MainVerticle::class.java)
   override suspend fun start() {
 
     val retriever =  ConfigRetriever.create(vertx, ConfigRetrieverOptions().addStore(ConfigStoreOptions()
@@ -52,6 +57,7 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
       single { TaskRepository() }
       single { FontFaceRepository() }
       single { FontGlyphRepository() }
+      single { FontService() }
 
 
       single<Font2SvgConfig> { config }
@@ -72,12 +78,14 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
       emf = Persistence.createEntityManagerFactory("font2svg", props)
 
       promise.complete(emf.createEntityManager().createNativeQuery("SELECT 'Font2svg Ready!'").singleResult)
+
+      logger.info("start mysql successful!")
     }
 
 
+    router.route().handler(LoggerHandler.create())
 
-
-    router.route("/assets/*").subRouter(createAssetRoute(vertx))
+    router.route("/asserts/*").subRouter(createAssetRoute(vertx))
     router.route("/fonts/*").subRouter(createFontRoute(vertx))
     router.route("/tasks/*").subRouter(createTaskRoute(vertx))
     router.route("/files/*").subRouter(createFileRoute(vertx))
@@ -109,7 +117,7 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
       .listen(config.serverPort)
       { http ->
         if (http.succeeded()) {
-          println("HTTP server started on port 8888")
+          logger.info("HTTP server started on port 8888")
         }
       }
 

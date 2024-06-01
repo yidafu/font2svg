@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/swcrc",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "jsx": true,
+      "target": "esnext"
+    },
+    "transform": {
+      "react": {
+        "pragma": "React.createElement",
+        "pragmaFrag": "React.Fragment",
+        "throwIfNamespace": true,
+        "development": false,
+        "useBuiltins": false
+      }
+    },
+    "loose": false,
+    "externalHelpers": false,
+    // Requires v1.2.50 or upper and requires target to be es2016 or upper.
+    "keepClassNames": false
+  },
+  "module": {
+    "type": "es6"
+  },
+  "minify": false,
+  "sourceMaps": true
+}

@@ -47,6 +47,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
   implementation("io.quarkus:quarkus-hibernate-reactive-panache-kotlin-parent:3.11.0")
+  implementation("com.mayakapps.kache:kache:2.1.0")
 
   implementation("org.hibernate.reactive:hibernate-reactive-core:2.3.0.Final")
   implementation("org.testcontainers:mysql:1.19.8")

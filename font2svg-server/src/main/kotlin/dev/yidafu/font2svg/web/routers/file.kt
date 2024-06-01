@@ -2,6 +2,8 @@ package dev.yidafu.font2svg.web.routers
 
 import dev.yidafu.font2svg.web.beean.FileUploadResponse
 import dev.yidafu.font2svg.web.beean.FontAlreadyExists
+import dev.yidafu.font2svg.web.beean.Response
+import dev.yidafu.font2svg.web.model.FontTask
 import dev.yidafu.font2svg.web.repository.ConfigRepository
 import io.vertx.core.Vertx
 import io.vertx.ext.web.Router
@@ -10,10 +12,13 @@ import io.vertx.kotlin.coroutines.CoroutineRouterSupport
 import io.vertx.kotlin.coroutines.coAwait
 import io.vertx.kotlin.coroutines.coroutineRouter
 import io.vertx.kotlin.coroutines.vertxFuture
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.UUID
+import kotlin.io.path.extension
 
 fun buildFileUrl(filename: String): String {
-  return "http://localhost:8888/assets/fonts/$filename"
+  return "http://localhost:8888/asserts/fonts/$filename"
 }
 
 inline fun CoroutineRouterSupport.createFileRoute(vertx: Vertx): Router =
@@ -25,6 +30,7 @@ inline fun CoroutineRouterSupport.createFileRoute(vertx: Vertx): Router =
         BodyHandler.create()
           .setDeleteUploadedFilesOnEnd(true)
       )
+
       /**
        * 上传文件接口
        */
@@ -33,19 +39,21 @@ inline fun CoroutineRouterSupport.createFileRoute(vertx: Vertx): Router =
           files.forEach { fileUpload ->
             val filename = fileUpload.fileName()
             val fs = vertx.fileSystem()
-            val targetPath = Paths.get(config.fontStaticAssetsPath, filename)
+            val newFilename = UUID.randomUUID().toString() + "." + Path.of(filename).extension
+            val targetPath = Paths.get(config.fontStaticAssetsPath, newFilename)
             val alreadyExist = fs.exists(targetPath.toString()).coAwait()
+//            val alreadyExist = false
             if (alreadyExist) {
-              ctx.json(FontAlreadyExists(filename))
+              ctx.json(Response.fail<FileUploadResponse>(FontAlreadyExists(filename)))
             } else {
-              fs.copy(fileUpload.uploadedFileName(), Paths.get(config.fontStaticAssetsPath, filename).toString()).coAwait()
+              fs.copy(fileUpload.uploadedFileName(), targetPath.toString()).coAwait()
 
               val resp = FileUploadResponse(
                 filename,
-                buildFileUrl(filename),
+                buildFileUrl(newFilename),
                 fileUpload.size(),
               )
-              ctx.json(resp)
+              ctx.json(Response.success(resp))
             }
 
           }
