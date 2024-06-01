@@ -9,6 +9,7 @@ import kotlinx.coroutines.future.await
 import org.hibernate.reactive.stage.Stage
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Future
 
@@ -25,6 +26,25 @@ class TaskRepository(
     }.toCompletableFuture().await() ?: emptyList()
   }
 
+  suspend fun findAllByIdList(ids: List<Long>): List<FontTask> {
+    if (ids.isEmpty()) return emptyList()
+    return sessionFactory.withSession { session ->
+      val builder = sessionFactory.criteriaBuilder
+      val query = builder.createQuery(FontTask::class.java)
+      val from = query.from(FontTask::class.java)
+      query.where(from.get<String>(FontTask::id.name).`in`(ids))
+      session.createQuery(query).resultList
+    }.toCompletableFuture().await() ?: emptyList()
+  }
+  suspend fun getByFaceId(fontFaceId: Long): List<FontTask> {
+    return sessionFactory.withSession { session ->
+      val builder = sessionFactory.criteriaBuilder
+      val query = builder.createQuery(FontTask::class.java)
+      val from = query.from(FontTask::class.java)
+      query.where(builder.equal(from.get<String>(FontTask::fontFaceId.name), fontFaceId))
+      session.createQuery(query).resultList
+    }.toCompletableFuture().await()
+  }
   suspend fun findById(id: Long): FontTask? {
     return sessionFactory.withSession { session ->
       session.find(FontTask::class.java, id)

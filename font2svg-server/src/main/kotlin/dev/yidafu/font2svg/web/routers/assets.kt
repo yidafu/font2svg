@@ -2,6 +2,7 @@ package dev.yidafu.font2svg.web.routers
 
 import com.mayakapps.kache.InMemoryKache
 import com.mayakapps.kache.KacheStrategy
+import dev.yidafu.font2svg.web.beean.InvalidUrl
 import dev.yidafu.font2svg.web.ext.writeFileAsync
 import dev.yidafu.font2svg.web.repository.ConfigRepository
 import dev.yidafu.font2svg.web.service.FontService
@@ -20,6 +21,7 @@ import io.vertx.json.schema.SchemaRouterOptions
 import io.vertx.json.schema.common.dsl.Schemas.*
 import io.vertx.kotlin.coroutines.CoroutineRouterSupport
 import io.vertx.kotlin.coroutines.coroutineRouter
+import org.slf4j.LoggerFactory
 import java.nio.file.Paths
 import kotlin.time.Duration.Companion.days
 
@@ -27,10 +29,12 @@ val cache = InMemoryKache<String, String>(200 * 1024 * 1024) {
   strategy = KacheStrategy.LRU
   expireAfterAccessDuration = 3.days
 }
+
 inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
   Router.router(vertx).apply {
     coroutineRouter {
 
+      val logger = LoggerFactory.getLogger("asserts")
       val schemaRouter = SchemaRouter.create(vertx, SchemaRouterOptions())
       val schemaParser = SchemaParser.createDraft7SchemaParser(schemaRouter)
       val configRepo = ConfigRepository()
@@ -67,7 +71,7 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
           val fontFamily = ctx.pathParam("fontFamily")
           val charCode = ctx.pathParam("charCode").toLong()
           val fontSize: Int = ctx.queryParam("fontSize").let { if (it.isEmpty()) 16 else it[0].toInt() }
-          val color: String = ctx.queryParam("color").let { if (it.isEmpty()) "#000000" else it[0] }
+          val color: String = ctx.queryParam("color").let { if (it.isEmpty()) "currentColor" else it[0] }
 
           // in memory cache for performance
           val key = "$fontFamily-$charCode-$fontSize-$color"
@@ -93,14 +97,15 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
         .handler(StaticHandler.create(FileSystemAccess.ROOT, configRepo.svgStaticAssetsPath))
         // 本地资源不存在，从数据库获取
         .coHandler { ctx ->
-          val paths = ctx.normalizedPath().split("/")
-          if (paths.size == 4) {
-            ctx.json("")
+          val paths = ctx.normalizedPath().split("/").filter { it.isNotEmpty() }
+          if (paths.size != 4) {
+            ctx.json(InvalidUrl())
             return@coHandler
           }
 
-          val fontFamily = paths[3]
-          val charCode = paths[4].replace(".svg", "").toLong()
+          val fontFamily = paths[2]
+          val charCode = paths[3].replace(".svg", "").toLong()
+          logger.info("get static glyph $fontFamily ==> $charCode")
 
           val service = FontService()
 

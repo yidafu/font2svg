@@ -2,6 +2,8 @@ package dev.yidafu.font2svg.web.routers
 
 import dev.yidafu.font2svg.core.FontSvgGenerator
 import dev.yidafu.font2svg.web.beean.CreateTaskDTO
+import dev.yidafu.font2svg.web.beean.RemoteFontNotExistFile
+import dev.yidafu.font2svg.web.beean.Response
 import dev.yidafu.font2svg.web.beean.WriteFileFailed
 import dev.yidafu.font2svg.web.ext.chunked
 import dev.yidafu.font2svg.web.ext.toCharacter
@@ -32,16 +34,19 @@ import io.vertx.json.schema.common.dsl.Schemas.stringSchema
 import io.vertx.kotlin.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.buffer
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URL
 import java.nio.file.Paths
 import kotlin.io.path.Path
+import kotlin.io.path.extension
 
 const val FONT_GENERATION_EVENT = "font.generation"
 
 inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router.router(vertx).apply {
   coroutineRouter {
     route().handler(BodyHandler.create())
+    val logger = LoggerFactory.getLogger("font-task")
     val taskRepo = TaskRepository()
     val faceRepo = FontFaceRepository()
     val configRepo = ConfigRepository()
@@ -52,7 +57,7 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
 
     get("/list").coHandler { ctx ->
       val list = taskRepo.findAll()
-      ctx.json(list)
+      ctx.json(Response.success(list))
     }
 
     post("/")
@@ -65,6 +70,7 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
               objectSchema()
                 .requiredProperty("fontFamily", stringSchema())
                 .requiredProperty("fontUrl", stringSchema())
+                .requiredProperty("previewText", stringSchema())
             )
           )
           .build()
@@ -75,10 +81,14 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
         val client = WebClient.create(vertx)
         val reqUrl = URL(createDTO.fontUrl!!)
         val resp = client.get(reqUrl.port, reqUrl.host, reqUrl.path).`as`(BodyCodec.buffer()).send().coAwait()
+        if (resp.statusCode() >= 400) {
+          ctx.json(Response.fail<FontTask>(RemoteFontNotExistFile(resp.statusCode())))
+          return@coHandler
+        }
         val fileBuf = resp.bodyAsBuffer()
         val fs = vertx.fileSystem()
-        val tempFilepath = fs.createTempFile("font-task", Path(createDTO.fontUrl).fileName.toString()).coAwait()
-
+        val tempFilepath = fs.createTempFile("font-task-", "." + Path(createDTO.fontUrl).extension).coAwait()
+        logger.info("create temp font file $tempFilepath")
         val writeSuccess = fs.writeFileAsync(tempFilepath, fileBuf)
 
         if (!writeSuccess) {
@@ -86,18 +96,20 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
           return@coHandler
         }
         val fontFile = File(tempFilepath)
+        fs.chmod(tempFilepath, "rwxrw-rw-").coAwait()
+
         val generator = FontSvgGenerator(tempFilepath)
         generator.use {
           val allCharList = generator.getAllChars()
 
-          val face = FontFace(createDTO.fontFamily!!, 0, fontFile.length())
+          val face = FontFace(createDTO.fontFamily!!, 0, fontFile.length(), createDTO.previewText, createDTO.fontUrl)
           faceRepo.create(face)
 
           val task = FontTask(createDTO.fontFamily, fontFile.length(), allCharList.size, 0, tempFilepath, FontTaskStatus.Created, face.id!!)
           val newTask = taskRepo.createTask(task)
 
           vertx.eventBus().send(FONT_GENERATION_EVENT, newTask?.id)
-          ctx.json(task)
+          ctx.json(Response.success(task))
         }
       }
 

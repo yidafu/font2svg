@@ -1,10 +1,10 @@
 package dev.yidafu.font2svg.web.routers
 
-import dev.yidafu.font2svg.web.beean.ContentNotFound
-import dev.yidafu.font2svg.web.beean.FontFaceNotExist
-import dev.yidafu.font2svg.web.beean.PageDTO
+import dev.yidafu.font2svg.web.beean.*
+import dev.yidafu.font2svg.web.model.FontGlyph
 import dev.yidafu.font2svg.web.repository.FontFaceRepository
 import dev.yidafu.font2svg.web.repository.FontGlyphRepository
+import dev.yidafu.font2svg.web.repository.TaskRepository
 import io.vertx.core.Vertx
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
@@ -25,6 +25,17 @@ inline fun CoroutineRouterSupport.createFontRoute(vertx: Vertx): Router = Router
     val schemaParser = SchemaParser.createDraft7SchemaParser(schemaRouter)
 
 
+    get("/all").coHandler { ctx ->
+      val fontRepo = FontFaceRepository()
+      val taskRepo = TaskRepository()
+      val list = fontRepo.getAll()
+      val tasks = taskRepo.findAllByIdList(list.mapNotNull { it.id }.toList())
+      val detailDTOList =  list.map { face ->
+        val taskBelong2Face = tasks.filter { it.fontFaceId == face.id }
+        FontFaceDetailDTO.from(face, taskBelong2Face)
+      }
+      ctx.json(Response.success(detailDTOList))
+    }
 
     get("/:id")
       .handler(
@@ -35,20 +46,16 @@ inline fun CoroutineRouterSupport.createFontRoute(vertx: Vertx): Router = Router
       )
       .coHandler { ctx ->
         val faceRepo = FontFaceRepository()
+        val taskRepo = TaskRepository()
         val fontFaceId = ctx.pathParam("id").toLong()
         val fontFace = faceRepo.getById(fontFaceId)
+        val tasks = taskRepo.getByFaceId(fontFaceId)
         if (fontFace == null) {
-          ctx.json(ContentNotFound())
+          ctx.json(Response.fail<FontFaceDetailDTO>(ContentNotFound()))
         } else {
-          ctx.json(fontFace)
+          ctx.json(Response.success(FontFaceDetailDTO.from(fontFace, tasks)))
         }
       }
-
-    get("/all").coHandler { ctx ->
-      val fontRepo = FontFaceRepository()
-      val list = fontRepo.getAll()
-      ctx.json(list)
-    }
 
     get("/:id/glyph/:glyphId")
       .handler(
@@ -66,14 +73,14 @@ inline fun CoroutineRouterSupport.createFontRoute(vertx: Vertx): Router = Router
         val fontRepo = FontFaceRepository()
         val face = fontRepo.getById(fontFaceId)
         if (face == null) {
-          ctx.json(FontFaceNotExist())
+          ctx.json(Response.fail<FontGlyph>(FontFaceNotExist()))
           return@coHandler
         }
         val glyph = glyphRepo.getByFontFaceAndGlyphId(fontFaceId, fontGlyphId)
         if (glyph == null) {
-          ctx.json(ContentNotFound())
+          ctx.json(Response.fail<FontGlyph>(ContentNotFound()))
         } else {
-          ctx.json(glyph)
+          ctx.json(Response.success(glyph))
         }
       }
 
@@ -95,11 +102,11 @@ inline fun CoroutineRouterSupport.createFontRoute(vertx: Vertx): Router = Router
         val fontRepo = FontFaceRepository()
         val face = fontRepo.getById(fontFaceId)
         if (face == null) {
-          ctx.json(FontFaceNotExist())
+          ctx.json(Response.fail<PageDTO<List<FontGlyph>>>(FontFaceNotExist()))
         } else {
           val list = glyphRepo.getListByPage(fontFaceId, page, size)
-
-          ctx.json(PageDTO(face.glyphCount, list))
+          val dtoList = list.map { FontGlyphDTO.from(it) }
+          ctx.json(Response.success(PageDTO(face.glyphCount, dtoList)))
         }
       }
   }
