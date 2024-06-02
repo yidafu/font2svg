@@ -113,7 +113,7 @@ export function createComponent(option: ICreateComponentOptions) {
 export function createDynamicComponent(option: ICreateComponentOptions) {
   function buildDynamicSvgUrl(fontFamily: string, char: string, fontSize: number, color: string) {
     const charCode = char.charCodeAt(0)
-    return `${option.assertUrl}/dynamic/svg/${fontFamily}/${charCode}.svg?fontSize=${fontSize}&color=${color}`;
+    return `${option.assertUrl}/dynamic/svg/${fontFamily}/${charCode}.svg?fontSize=${fontSize}&color=${(color.replace('#', '%23'))}`;
   }
   return function Font2Svg(props: IFont2SvgProps) {
     const { fontFamily, text, color = '#000', fontSize = 16, fallback } = props;
