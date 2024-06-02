@@ -6,23 +6,26 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 class Font2SvgConfig {
-  var staticAssetsPath =  run {
-    val path = Paths.get(System.getProperty("user.dir"), "font2svg")
-    ensureDirectory(path)
-    path.toString()
-  }
+  var staticAssetsPath =
+    run {
+      val path = Paths.get(System.getProperty("user.dir"), "font2svg")
+      ensureDirectory(path)
+      path.toString()
+    }
 
-  var fontStaticAssetsPath = run {
-    val path = Paths.get(staticAssetsPath, "fonts")
-    ensureDirectory(path)
-    path.toString()
-  }
+  var fontStaticAssetsPath =
+    run {
+      val path = Paths.get(staticAssetsPath, "fonts")
+      ensureDirectory(path)
+      path.toString()
+    }
 
-  var svgStaticAssetsPath = run {
-    val path = Paths.get(staticAssetsPath, "svg")
-    ensureDirectory(path)
-    path.toString()
-  }
+  var svgStaticAssetsPath =
+    run {
+      val path = Paths.get(staticAssetsPath, "svg")
+      ensureDirectory(path)
+      path.toString()
+    }
 
   var serverPort = 8888
 
@@ -32,6 +35,7 @@ class Font2SvgConfig {
       file.mkdirs()
     }
   }
+
   fun updateStaticAssetsPath(path: String) {
     staticAssetsPath = path
     val fontDir = Paths.get(staticAssetsPath, "fonts")

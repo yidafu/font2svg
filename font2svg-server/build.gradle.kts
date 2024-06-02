@@ -3,9 +3,11 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin ("jvm") version "1.9.22"
+  kotlin("jvm") version "1.9.22"
   application
   id("com.github.johnrengelman.shadow") version "7.1.2"
+
+  id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
 }
 
 group = "dev.yidafu.font2svg"
@@ -22,7 +24,7 @@ val mainVerticleName = "dev.yidafu.font2svg.web.MainVerticle"
 val launcherClassName = "io.vertx.core.Launcher"
 
 val watchForChange = "src/**/*"
-val doOnChange = "${projectDir}/gradlew classes"
+val doOnChange = "$projectDir/gradlew classes"
 
 application {
   mainClass.set(launcherClassName)

@@ -13,12 +13,14 @@ fun FontGlyph.toSvgGlyph(): SvgGlyph {
     fontUnderlineThickness,
     fontUnitPerEm,
     fontMaxAdvanceHeight,
-    fontMaxAdvanceWidth
+    fontMaxAdvanceWidth,
   )
 }
 
-
-fun SvgGlyph.toFontGlyph(fontFaceId: Long, charCode: Long): FontGlyph {
+fun SvgGlyph.toFontGlyph(
+  fontFaceId: Long,
+  charCode: Long,
+): FontGlyph {
   return FontGlyph(
     fontFaceId,
     charCode.toCharacter(),
@@ -31,6 +33,6 @@ fun SvgGlyph.toFontGlyph(fontFaceId: Long, charCode: Long): FontGlyph {
     underlineThickness,
     unitsPerEN,
     maxAdvanceHeight,
-    maxAdvanceWidth
+    maxAdvanceWidth,
   )
 }

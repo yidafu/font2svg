@@ -10,18 +10,21 @@ data class FontFaceDetailDTO(
   val glyphCount: Int,
   val previewText: String,
   val downloadUrl: String,
-  val tasks: List<FontTask>
+  val tasks: List<FontTask>,
 ) {
   companion object {
-    fun from(fontFace: FontFace, tasks: List<FontTask>): FontFaceDetailDTO {
+    fun from(
+      fontFace: FontFace,
+      tasks: List<FontTask>,
+    ): FontFaceDetailDTO {
       return FontFaceDetailDTO(
-         fontFace.id ?: -1,
-         fontFace.name,
-         fontFace.fileSize,
-         fontFace.glyphCount,
-         fontFace.previewText,
+        fontFace.id ?: -1,
+        fontFace.name,
+        fontFace.fileSize,
+        fontFace.glyphCount,
+        fontFace.previewText,
         fontFace.downloadUrl,
-        tasks
+        tasks,
       )
     }
   }

@@ -9,8 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp
 import java.sql.Date
 
 @MappedSuperclass
-open  class FontBaseEntity {
-
+open class FontBaseEntity {
   @Id
   @GeneratedValue
   val id: Long? = null
@@ -18,7 +17,6 @@ open  class FontBaseEntity {
   @CreationTimestamp
   @Column(name = "created_at")
   val createdAt: Date? = null
-
 
   @UpdateTimestamp
   @Column(name = "updated_at")
