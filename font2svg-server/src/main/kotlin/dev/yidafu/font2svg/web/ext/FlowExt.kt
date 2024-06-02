@@ -11,7 +11,6 @@ fun <T> Flow<T>.chunked(chunkSize: Int): Flow<List<T>> {
   val buffer = mutableListOf<T>()
   return flow {
     this@chunked.collect {
-      println("chunk item")
       buffer.add(it)
       if (buffer.size == chunkSize) {
         emit(buffer.toList())
