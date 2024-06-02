@@ -22,7 +22,9 @@ import io.vertx.json.schema.common.dsl.Schemas.*
 import io.vertx.kotlin.coroutines.CoroutineRouterSupport
 import io.vertx.kotlin.coroutines.coroutineRouter
 import org.slf4j.LoggerFactory
+import java.net.URLDecoder
 import java.nio.file.Paths
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Duration.Companion.days
 
 val cache = InMemoryKache<String, String>(200 * 1024 * 1024) {
@@ -30,6 +32,7 @@ val cache = InMemoryKache<String, String>(200 * 1024 * 1024) {
   expireAfterAccessDuration = 3.days
 }
 
+@OptIn(ExperimentalEncodingApi::class)
 inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
   Router.router(vertx).apply {
     coroutineRouter {
@@ -71,7 +74,7 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
           val fontFamily = ctx.pathParam("fontFamily")
           val charCode = ctx.pathParam("charCode").toLong()
           val fontSize: Int = ctx.queryParam("fontSize").let { if (it.isEmpty()) 16 else it[0].toInt() }
-          val color: String = ctx.queryParam("color").let { if (it.isEmpty()) "currentColor" else it[0] }
+          val color: String =  URLDecoder.decode(ctx.queryParam("color").let { if (it.isEmpty()) "currentColor" else it[0] }, "utf-8")
 
           // in memory cache for performance
           val key = "$fontFamily-$charCode-$fontSize-$color"
