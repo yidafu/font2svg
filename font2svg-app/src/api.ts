@@ -1,4 +1,4 @@
-import { request } from "./utils";
+import { request } from './utils';
 
 export interface IFontTask {
   fontUrl: string;
@@ -10,16 +10,14 @@ export function createTask(task: IFontTask) {
   return request('./tasks/', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(task)
-  })
+    body: JSON.stringify(task),
+  });
 }
 
-
-
 interface IPage<T> {
-  data: T[]
+  data: T[];
   total: number;
 }
 
@@ -40,13 +38,13 @@ export interface IFontFace {
   fileSize: number;
   previewText: string;
   downloadUrl: string;
-  tasks: IFontTask[]
+  tasks: IFontTask[];
 }
 
 export enum FontTaskStatus {
-  Created = "Created",
-  Generating = "Generating",
-  Done = "Done",
+  Created = 'Created',
+  Generating = 'Generating',
+  Done = 'Done',
 }
 
 export interface IFontTask {
@@ -62,19 +60,25 @@ export interface IFontTask {
   fontFaceId: number;
 }
 
-
 export function getFontList() {
-  return request<IFontFace[]>('./fonts/all', { method: 'GET' })
+  return request<IFontFace[]>('./fonts/all', { method: 'GET' });
 }
 
-export function getFonGlyphByPage(faceId: number, page: number = 1, pageSize: number = 20) {
-  return request<IPage<IFontGlyph>>(`./fonts/${faceId}/glyphs?page=${page}&size=${pageSize}`, { method: 'GET' })
+export function getFonGlyphByPage(
+  faceId: number,
+  page: number = 1,
+  pageSize: number = 20
+) {
+  return request<IPage<IFontGlyph>>(
+    `./fonts/${faceId}/glyphs?page=${page}&size=${pageSize}`,
+    { method: 'GET' }
+  );
 }
 
 export function getFontById(id: number) {
-  return request<IFontFace>('./fonts/' + id, { method: 'GET' })
+  return request<IFontFace>('./fonts/' + id, { method: 'GET' });
 }
 
 export function removeFontFace(id: number) {
-  return request<IFontFace[]>('./fonts/' + id, { method: 'DELETE' })
+  return request<IFontFace[]>('./fonts/' + id, { method: 'DELETE' });
 }

@@ -4,15 +4,17 @@ export interface IResponse<T> {
   data?: T;
 }
 
-export async function request<T>(url: string, options: RequestInit): Promise<T> {
-
-  const resp = await fetch(url, options)
+export async function request<T>(
+  url: string,
+  options: RequestInit
+): Promise<T> {
+  const resp = await fetch(url, options);
   if (resp.status >= 400) {
-    throw new Error(resp.statusText)
+    throw new Error(resp.statusText);
   }
-  const result: IResponse<T> = await resp.json()
+  const result: IResponse<T> = await resp.json();
   if (result.code !== 0) {
-    throw new Error(result.message)
+    throw new Error(result.message);
   }
   return result.data!;
 }

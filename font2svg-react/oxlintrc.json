@@ -1,0 +1,12 @@
+{
+  "env": {
+    "browser": true
+  },
+  "globals": {},
+  "settings": {},
+  "rules": {
+    "eqeqeq": "error",
+    "for-direction": "warn",
+    "switch-case-braces": "warn"
+  }
+}

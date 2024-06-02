@@ -1,0 +1,17 @@
+# Ignore artifacts:
+build
+coverage
+
+# Ignore all HTML files:
+**/*.html
+font2svg-server/
+font2svg-core/
+node_modules/
+dist/
+build-esm/
+build-cjs/
+types/
+**/.git
+**/.svn
+**/.hg
+**/node_modules
