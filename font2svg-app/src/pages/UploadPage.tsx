@@ -1,28 +1,10 @@
-import { useEffect, useState } from 'react'
-
-
-import { createComponent } from 'font2svg-react'
-import { FormRow } from '../components/FormRow';
-import { UploadFontFile } from '../components/UploadFontFile';
 import { Button, Input, useToast } from '@chakra-ui/react';
 import { useForm, SubmitHandler } from "react-hook-form"
-import { request } from '../utils/request';
 
-interface IFontTask {
-  fontUrl: string;
-  fontFamily: string;
-  previewText: string;
-}
+import { FormRow } from '../components/FormRow';
+import { UploadFontFile } from '../components/UploadFontFile';
+import { IFontTask, createTask } from '../api';
 
-function createTask(task: IFontTask) {
-  return request('./tasks/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(task)
-  })
-}
 
 
 export interface IFontStyle {

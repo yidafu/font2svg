@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
+  ButtonGroup,
+  Button,
 } from '@chakra-ui/react'
 
 import {
@@ -16,32 +18,61 @@ import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
 import { FormRow } from '../components/FormRow';
 import { ColorPicker } from '../components/ColorPicker';
 import { PreviewCode } from '../components/PreviewCode';
-import { Font2Svg } from '../components/Font2Fvg';
+import { DynamicFont2Svg, Font2Svg } from '../components/Font2Fvg';
+import { IFontFace, getFontList } from '../api';
 
 SyntaxHighlighter.registerLanguage('jsx', jsx);
 
+const STATIC_IMPORT = `import { createComponent } from 'font2svg-react';
+const Font2Svg = createComponent({ assertUrl: 'http://127.0.0.1:8888/asserts' });`
+
+const DYNAMIC_IMPORT = `import { createDynamicComponent } from 'font2svg-react';
+const DynamicFont2Svg = createDynamicComponent({ assertUrl: 'http://127.0.0.1:8888/asserts' });`
 export interface IFontStyle {
   fontSize: number;
   color: string;
   fontFamily: string;
 }
 
+export interface IPreviewFontsProps {
+  onChange(fontFamily: string): void
+}
+function PreviewFonts(props: IPreviewFontsProps) {
+  const [fonts, setFonts] = useState<IFontFace[]>([])
+  useEffect(() => {
+    getFontList().then(list => {
+      setFonts(list)
+      props.onChange(list[0]?.name)
+    })
+  }, [])
+  return (
+    <div>
+      {
+        fonts.map(font => (
+          <Font2Svg key={font.id} onClick={() => props.onChange(font.name)} fontFamily={font.name} fontSize={20} color="blue" className='inline-block p-2 mb-4 mr-4 border radius-2' text={font.previewText} />
+        ))
+      }
+    </div>
+  )
+}
+
 export function PreviewPage() {
 
-  const [fontStyle, setFontStyle] = useState({ fontSize: 16, color: '#333' })
+  const [fontStyle, setFontStyle] = useState({ fontFamily: '', fontSize: 32, color: '#333' })
+  const [isStatic, setIsStatic] = useState(true)
   const [text, setText] = useState('预览文本')
 
-  const componentCodeString = `<Font2Svg
-  fontFamily='JinBuTi'
+  const componentCodeString = `<${isStatic ? 'Font2Svg' : 'DynamicFont2Svg'}
+  fontFamily='${fontStyle.fontFamily}'
   fontSize={${fontStyle.fontSize}}
   color='${fontStyle.color}'
   text='${text}'
 />`
-
+  console.log(fontStyle)
   return (
     <div>
       <FormRow label='预览字体'>
-        <Input className="w-auto" width='300px' />
+        <PreviewFonts onChange={(fontFamily) => setFontStyle((oldStyle) => ({ ...oldStyle, fontFamily }))} />
       </FormRow>
       <FormRow label='字体大小'>
         <NumberInput
@@ -49,7 +80,7 @@ export function PreviewPage() {
           onChange={(fontSize) => setFontStyle((oldStyle) => ({ ...oldStyle, fontSize: parseInt(fontSize) }))}
           display='inline'
         >
-          <NumberInputField width='auto' />
+          <NumberInputField />
           <NumberInputStepper>
             <NumberIncrementStepper />
             <NumberDecrementStepper />
@@ -62,6 +93,19 @@ export function PreviewPage() {
           onChange={(color) => setFontStyle((oldStyle) => ({ ...oldStyle, color }))}
         />
       </FormRow>
+
+      <FormRow label='组件类型' placeholder='1. 静态组件值: 获取远程静态SVG，浏览器计算字体高度; 2. 动态组件: 将字体大小、颜色等参数传给服务器，由服务器动态生成SVG'>
+        <ButtonGroup>
+          <Button
+            colorScheme='blue'
+            variant={isStatic ? 'solid' :'outline'}
+            onClick={() => setIsStatic(true)}>静态组件</Button>
+          <Button
+            colorScheme='cyan'
+            variant={!isStatic ? 'solid' : 'outline'}
+            onClick={() => setIsStatic(false)}>动态组件</Button>
+        </ButtonGroup>
+      </FormRow>
       <FormRow label='预览文本'>
         <Input
           className="w-auto"
@@ -71,26 +115,30 @@ export function PreviewPage() {
         />
       </FormRow>
       <FormRow label='使用方式'>
-          <h3>引入方式</h3>
+        <h3>引入方式</h3>
 
-          <PreviewCode code={`import { createComponent } from 'font2svg-react';
-const Font2Svg = createComponent({ assertUrl: 'http://127.0.0.1:8888/asserts' });`} />
+        <PreviewCode code={isStatic ? STATIC_IMPORT : DYNAMIC_IMPORT} />
 
-          <h3>使用组件</h3>
-          <div className='relative'>
-            <PreviewCode code={componentCodeString} copyable />
-          </div>
+        <h3>使用组件</h3>
+        <div className='relative'>
+          <PreviewCode code={componentCodeString} copyable />
+        </div>
       </FormRow>
 
       <FormRow label='效果预览'>
-        <div className='p-4 flex justify-center border-dashed border border-black'>
-          <Font2Svg
-            fontFamily={'JinBuTi'}
+        <div className='flex justify-center p-4 border border-black border-dashed'>
+          {isStatic ? <Font2Svg
+            fontFamily={fontStyle.fontFamily}
             fontSize={fontStyle.fontSize}
             color={fontStyle.color}
             text={text}
           />
-
+            : <DynamicFont2Svg
+              fontFamily={fontStyle.fontFamily}
+              fontSize={fontStyle.fontSize}
+              color={fontStyle.color}
+              text={text}
+            />}
         </div>
       </FormRow>
     </div>
