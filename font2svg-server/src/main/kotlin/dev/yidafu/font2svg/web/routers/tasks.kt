@@ -5,12 +5,9 @@ import dev.yidafu.font2svg.web.beean.CreateTaskDTO
 import dev.yidafu.font2svg.web.beean.RemoteFontNotExistFile
 import dev.yidafu.font2svg.web.beean.Response
 import dev.yidafu.font2svg.web.beean.WriteFileFailed
-import dev.yidafu.font2svg.web.ext.chunked
-import dev.yidafu.font2svg.web.ext.toCharacter
-import dev.yidafu.font2svg.web.ext.toSvgGlyph
+import dev.yidafu.font2svg.web.ext.*
 import dev.yidafu.font2svg.web.model.FontTask
 import dev.yidafu.font2svg.web.repository.TaskRepository
-import dev.yidafu.font2svg.web.ext.writeFileAsync
 import dev.yidafu.font2svg.web.model.FontFace
 import dev.yidafu.font2svg.web.model.FontGlyph
 import dev.yidafu.font2svg.web.model.FontTaskStatus
@@ -132,8 +129,7 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
               .collect { list ->
                   val glyphs = list.map {
                     val (charCode, svg) = it
-                    val charText = charCode.toCharacter()
-                    FontGlyph(fontFaceId, charText, charCode, svg.viewBox, svg.path, svg.ascender, svg.descender)
+                    svg.toFontGlyph(fontFaceId, charCode)
                   }
                   glyphRepo.saveGlyphs(glyphs)
 
@@ -145,7 +141,6 @@ inline fun CoroutineRouterSupport.createTaskRoute(vertx: Vertx): Router = Router
                   }
                   faceRepo.updateGlyphCount(task.fontFaceId, list.size)
                   taskRepo.updateProcess(task.id!!, list.size)
-
 
                 taskRepo.updateStatus(taskId, FontTaskStatus.Done)
               }

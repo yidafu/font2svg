@@ -17,11 +17,25 @@ class FontGlyph(
   val viewBox: String,
   @Column(name = "svg_path", columnDefinition = "Text")
   val svgPath: String,
-  @Column(name = "svg_ascender")
-  val svgAscender: Int,
-  @Column(name = "svg_descender")
-  val svgDescender: Int,
+  @Column(name = "font_ascender")
+  val fontAscender: Int,
+  @Column(name = "font_descender")
+  val fontDescender: Int,
+
+  @Column(name = "font_underline_position")
+  val fontUnderlinePosition: Int,
+
+  @Column(name = "font_underline_thickness")
+  val fontUnderlineThickness: Int,
+
+  @Column(name = "font_units_per_em")
+  val fontUnitPerEm: Int,
+  @Column(name = "font_max_advance_height")
+  val fontMaxAdvanceHeight: Int,
+
+  @Column(name = "font_max_advance_width")
+  val fontMaxAdvanceWidth: Int,
 ) : FontBaseEntity() {
 
-  constructor() : this(0,"", 0, "", "", 0, 0)
+  constructor() : this(0,"", 0, "", "", 0, 0, 0, 0, 0, 0, 0)
 }
