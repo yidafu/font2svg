@@ -51,6 +51,7 @@ dependencies {
 
   implementation("org.hibernate.reactive:hibernate-reactive-core:2.3.0.Final")
   implementation("org.testcontainers:mysql:1.19.8")
+  implementation("ch.qos.logback:logback-classic:1.5.6")
 
   implementation(project(":font2svg-core"))
   testImplementation("io.vertx:vertx-junit5")
