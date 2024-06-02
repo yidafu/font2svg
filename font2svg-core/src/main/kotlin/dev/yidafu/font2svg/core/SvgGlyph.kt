@@ -5,5 +5,9 @@ data class SvgGlyph(
     val path: String,
     val ascender: Int,
     val descender: Int,
-) {
-}
+    val underlinePos: Int,
+    val underlineThickness: Int,
+    val unitsPerEN: Int,
+    val maxAdvanceHeight: Int,
+    val maxAdvanceWidth: Int,
+)

@@ -48,17 +48,21 @@ class FontSvgGenerator(fontFilepath: String) : Closeable {
     }
 
     fun generateSvg(char: Long): SvgGlyph {
-        val glyph_index = FreeType.FT_Get_Char_Index(face, char);
+        val glyphIndex = FreeType.FT_Get_Char_Index(face, char);
         val error3 = FreeType.FT_Load_Glyph(
             face,
-            glyph_index,
+            glyphIndex,
             FreeType.FT_LOAD_DEFAULT
         )
+
+        check(error3 == FreeType.FT_Err_Ok) { "Failed to load glyph: " + FreeType.FT_Error_String(error3) }
 
         val glyph = face.glyph()
         val metrics = glyph?.metrics()
 
-
+        face.underline_position()
+        face.underline_thickness()
+        face.units_per_EM()
         val svgPaths = mutableListOf<SvgLineCmd>()
         val funcs = FT_Outline_Funcs.create().move_to { to, _ ->
             svgPaths.add(SvgLineCmd.MoveTo(Vertex.from(to)))
@@ -78,26 +82,18 @@ class FontSvgGenerator(fontFilepath: String) : Closeable {
 
         val vWidth1 = max(metrics?.width() ?: 0, metrics?.horiAdvance() ?: 0)
         val minY = -face.ascender()
-        val ratio = (abs(face.ascender().toFloat()) + abs(face.descender().toFloat())) / 1000
 
         val svgGlyph = SvgGlyph(
             "0 $minY $vWidth1 ${face.height()}",
             svgPaths.joinToString(" ") { cmd -> cmd.toString() },
             face.ascender().toInt(),
-            face.descender().toInt()
+            face.descender().toInt(),
+            face.underline_position().toInt(),
+            face.underline_thickness().toInt(),
+            face.units_per_EM().toInt(),
+            face.max_advance_height().toInt(),
+            face.max_advance_width().toInt(),
         )
-//        val svg = SVG.svg {
-//            attributes["font-ratio"] = "$ratio"
-////            width = (metrics?.width() ?: 800).toString()
-////            height = (metrics?.height() ?: 800).toString()
-//            viewBox = "0 $minY $vWidth1 ${face.height()}"
-//            path {
-//                d = svgPaths.joinToString(" ") { cmd -> cmd.toString() }
-//                fill = "currentColor"
-//            }
-//        }
-//        val builder = StringBuilder()
-//        svg.render(builder, RenderMode.INLINE)
 
         return svgGlyph
     }
@@ -129,14 +125,39 @@ class FontSvgGenerator(fontFilepath: String) : Closeable {
     }
 
     companion object {
-        fun glyphToSvgString(glyph: SvgGlyph, fontSize: Int, color: String): String {
+        fun glyphToSvgString(glyph: SvgGlyph, fontSize: Int, color: String, underline: Boolean =false): String {
             val ratio = (abs(glyph.descender) + abs(glyph.ascender)).toFloat() / 1000
             val svg = SVG.svg {
                 height = "${ratio * fontSize}px"
                 viewBox = glyph.viewBox
-                path {
-                    d = glyph.path
-                    fill = color
+                attributes["data-underline-pos"] = glyph.underlinePos.toString()
+                attributes["data-underline-thickness"] = glyph.underlinePos.toString()
+                attributes["data-units-per-em"] = glyph.unitsPerEN.toString()
+                if (glyph.path.isNotEmpty()) {
+                    path {
+                        d = glyph.path
+                        fill = color
+                    }
+                } else {
+                    val list = glyph.viewBox.split(" ")
+                    rect {
+                        x = list[0]
+                        y = list[1]
+                        width = list[2]
+                        height = list[3]
+                        fill = "transparent"
+                    }
+                }
+                if (underline) {
+                    line {
+                        val yOffset =  (glyph.ascender + glyph.underlinePos).toString()
+                        x1 = "0"
+                        y1 = yOffset
+                        x2 = (glyph.maxAdvanceWidth).toString()
+                        y2 = yOffset
+                        stroke = color
+                        strokeWidth = glyph.underlineThickness.toString()
+                    }
                 }
             }
             val builder = StringBuilder()
