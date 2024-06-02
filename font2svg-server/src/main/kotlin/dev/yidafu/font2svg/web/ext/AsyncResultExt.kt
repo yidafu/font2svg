@@ -9,7 +9,6 @@ fun <T> AsyncResult<T>.onSuccess(block: (T) -> Unit): AsyncResult<T> {
   return this
 }
 
-
 fun <T> AsyncResult<T>.onFail(block: (cause: Throwable) -> Unit): AsyncResult<T> {
   if (failed()) {
     block(cause())

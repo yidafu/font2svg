@@ -15,8 +15,6 @@ import io.vertx.config.ConfigRetriever
 import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
 import io.vertx.core.json.JsonObject
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.LoggerHandler
@@ -32,45 +30,51 @@ import jakarta.persistence.Persistence
 import org.hibernate.reactive.stage.Stage
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
-
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
-
   private lateinit var emf: EntityManagerFactory
 
   private val logger: Logger = LoggerFactory.getLogger(MainVerticle::class.java)
-  override suspend fun start() {
 
-    val retriever =  ConfigRetriever.create(vertx, ConfigRetrieverOptions().addStore(ConfigStoreOptions()
-      .setType("file")
-      .setFormat("yaml")
-      .setOptional(true)
-      .setConfig(JsonObject().put("path", "font2svg.yaml"))))
+  override suspend fun start() {
+    val retriever =
+      ConfigRetriever.create(
+        vertx,
+        ConfigRetrieverOptions().addStore(
+          ConfigStoreOptions()
+            .setType("file")
+            .setFormat("yaml")
+            .setOptional(true)
+            .setConfig(JsonObject().put("path", "font2svg.yaml")),
+        ),
+      )
     val configObj = retriever.config.coAwait()
     val config = Font2SvgConfig.build(configObj)
 
-    val appModule = module {
-      single<Stage.SessionFactory> {
-        emf.unwrap(Stage.SessionFactory::class.java)
+    val appModule =
+      module {
+        single<Stage.SessionFactory> {
+          emf.unwrap(Stage.SessionFactory::class.java)
+        }
+        single { ConfigRepository() }
+        single { TaskRepository() }
+        single { FontFaceRepository() }
+        single { FontGlyphRepository() }
+        single { FontService() }
+
+        single<Font2SvgConfig> { config }
       }
-      single { ConfigRepository() }
-      single { TaskRepository() }
-      single { FontFaceRepository() }
-      single { FontGlyphRepository() }
-      single { FontService() }
-
-
-      single<Font2SvgConfig> { config }
-    }
 
     startKoin {
       modules(listOf(appModule))
     }
 
-    val server = vertx
-      .createHttpServer()
+    val server =
+      vertx
+        .createHttpServer()
     val router = Router.router(vertx)
-
 
     val props = emptyMap<String, String>()
 
@@ -81,7 +85,6 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
 
       logger.info("start mysql successful!")
     }
-
 
     router.route().handler(LoggerHandler.create())
 
@@ -95,10 +98,10 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
     }
 
     router.route("/").handler { ctx ->
-        ctx.response().end("Holle Font2svg")
+      ctx.response().end("Holle Font2svg")
     }
     router.errorHandler(
-      400
+      400,
     ) { ctx: RoutingContext ->
       val exception = ctx.failure()
       if (exception is BadRequestException) {
@@ -114,17 +117,14 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
       }
     }
     server.requestHandler(router)
-      .listen(config.serverPort)
-      { http ->
+      .listen(config.serverPort) { http ->
         if (http.succeeded()) {
           logger.info("HTTP server started on port 8888")
         }
       }
-
   }
 
   override suspend fun stop() {
     emf.close()
   }
 }
-

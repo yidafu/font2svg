@@ -1,9 +1,8 @@
-
 /*
 https://nikitahl.com/custom-styled-input-type-file#:~:text=Custom%20styled%20input%20type%20file%20upload%20button%20with,Demo%20See%20the%20full%20example%20on%20CodePen%3A%20
 
 */
-input[type=file] {
+input[type="file"] {
   width: 350px;
   max-width: 100%;
   color: #444;
@@ -13,7 +12,7 @@ input[type=file] {
   border: 1px solid #555;
 }
 
-input[type=file]::file-selector-button {
+input[type="file"]::file-selector-button {
   margin-right: 20px;
   border: none;
   background: #084cdf;
@@ -21,10 +20,10 @@ input[type=file]::file-selector-button {
   border-radius: 10px;
   color: #fff;
   cursor: pointer;
-  transition: background .2s ease-in-out;
+  transition: background 0.2s ease-in-out;
 }
 
-input[type=file]::file-selector-button:hover {
+input[type="file"]::file-selector-button:hover {
   background: #0d45a5;
 }
 
@@ -41,7 +40,9 @@ input[type=file]::file-selector-button:hover {
   border: 2px dashed #555;
   color: #444;
   cursor: pointer;
-  transition: background .2s ease-in-out, border .2s ease-in-out;
+  transition:
+    background 0.2s ease-in-out,
+    border 0.2s ease-in-out;
 }
 
 .drop-container:hover {
@@ -58,7 +59,7 @@ input[type=file]::file-selector-button:hover {
   font-size: 20px;
   font-weight: bold;
   text-align: center;
-  transition: color .2s ease-in-out;
+  transition: color 0.2s ease-in-out;
 }
 
 .drop-container.drag-active {

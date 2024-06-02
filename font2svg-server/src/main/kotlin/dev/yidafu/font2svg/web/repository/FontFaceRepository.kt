@@ -9,6 +9,7 @@ import org.koin.core.component.inject
 
 class FontFaceRepository : KoinComponent {
   private val sessionFactory: Stage.SessionFactory by inject()
+
   suspend fun create(face: FontFace) {
     val criteriaBuilder = sessionFactory.criteriaBuilder
 
@@ -17,13 +18,16 @@ class FontFaceRepository : KoinComponent {
         val query = criteriaBuilder.createQuery(FontFace::class.java)
         val from = query.from(FontFace::class.java)
 
-        val oldFace = session.createQuery(
-          query.select(from)
-            .where(criteriaBuilder.equal(
-              from.get<String>(FontFace::name.name),
-              face.name)
-            )
-        ).singleResultOrNull.toCompletableFuture().await()
+        val oldFace =
+          session.createQuery(
+            query.select(from)
+              .where(
+                criteriaBuilder.equal(
+                  from.get<String>(FontFace::name.name),
+                  face.name,
+                ),
+              ),
+          ).singleResultOrNull.toCompletableFuture().await()
         if (oldFace != null) {
           throw RuntimeException("font face ${face.name} already exists")
         }
@@ -47,11 +51,12 @@ class FontFaceRepository : KoinComponent {
       val query = builder.createQuery(FontFace::class.java)
       val from = query.from(FontFace::class.java)
       query.where(
-        builder.equal(from.get<String>(FontFace::name.name), faceFamily)
+        builder.equal(from.get<String>(FontFace::name.name), faceFamily),
       )
       session.createQuery(query).singleResultOrNull
     }.await()
   }
+
   suspend fun getAll(): List<FontFace> {
     return sessionFactory.withSession { session ->
       val builder = sessionFactory.criteriaBuilder
@@ -62,8 +67,10 @@ class FontFaceRepository : KoinComponent {
     }.await() ?: emptyList()
   }
 
-
-  suspend fun updateGlyphCount(faceId: Long, glyphCount: Int): Boolean {
+  suspend fun updateGlyphCount(
+    faceId: Long,
+    glyphCount: Int,
+  ): Boolean {
     val face = getById(faceId) ?: return false
 
     sessionFactory.withSession { seession ->

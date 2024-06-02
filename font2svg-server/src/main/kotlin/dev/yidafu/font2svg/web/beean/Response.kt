@@ -5,7 +5,6 @@ data class Response<T>(
   val message: String,
   val data: T? = null,
 ) {
-
   companion object {
     fun <T> success(data: T): Response<T> {
       return Response(0, "ok", data)

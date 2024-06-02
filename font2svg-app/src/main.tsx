@@ -1,11 +1,14 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 
-import { ChakraProvider, extendTheme, withDefaultColorScheme } from '@chakra-ui/react'
+import {
+  ChakraProvider,
+  extendTheme,
+  withDefaultColorScheme,
+} from '@chakra-ui/react';
 
-import './index.css'
+import './index.css';
 import App from './App';
-
 
 const customTheme = extendTheme(
   withDefaultColorScheme({
@@ -13,21 +16,17 @@ const customTheme = extendTheme(
     components: {
       FormLabel: {
         baseStyle: {
-          display: 'inline'
-
-        }
-      }
-    }
-  }),
-)
-
-
-
+          display: 'inline',
+        },
+      },
+    },
+  })
+);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ChakraProvider theme={customTheme}>
       <App />
     </ChakraProvider>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);

@@ -1,28 +1,27 @@
 export interface IElement extends INode {
   tagName: string;
-  children: ISvgElement[]
+  children: ISvgElement[];
 }
 
 export interface IText extends INode {
   value: string;
-  tagName: 'text'
+  tagName: 'text';
 }
 
 export interface INode {
-  tagName: string,
-  properties: Record<string, string>
+  tagName: string;
+  properties: Record<string, string>;
 }
 
-type ISvgElement = IElement | IText
+type ISvgElement = IElement | IText;
 
+const CHAR_A = 65;
+const CHAT_Z = 90;
+const CHAT_a = 97;
+const CHAT_z = 122;
 
-const CHAR_A = 65
-const CHAT_Z = 90
-const CHAT_a = 97
-const CHAT_z = 122
-
-const CHAT_0 = 48
-const CHAT_9 = 57
+const CHAT_0 = 48;
+const CHAT_9 = 57;
 
 export function parse(source: string): IElement {
   let index = 0;
@@ -30,15 +29,15 @@ export function parse(source: string): IElement {
   const root = {
     tagName: 'root',
     properties: {},
-    children: []
-  }
+    children: [],
+  };
 
-  const stack: IElement[] = []
+  const stack: IElement[] = [];
 
-  let currentElement: IElement = root
+  let currentElement: IElement = root;
 
   function peek(offset: number = 0) {
-    return source[index + offset]
+    return source[index + offset];
   }
 
   function next() {
@@ -50,12 +49,17 @@ export function parse(source: string): IElement {
   }
 
   function validChar(char: string) {
-    const code = char.charCodeAt(0)
-    return (code >= CHAR_A && code <= CHAT_Z) || (code >= CHAT_a && code <= CHAT_z) || (code >= CHAT_0 && code <= CHAT_9);
+    const code = char.charCodeAt(0);
+    return (
+      (code >= CHAR_A && code <= CHAT_Z) ||
+      (code >= CHAT_a && code <= CHAT_z) ||
+      (code >= CHAT_0 && code <= CHAT_9) ||
+      char === '-'
+    );
   }
 
   function isWhitespace() {
-    return char === ' ' || char === '\n' || char === '\r' || char === '\t'
+    return char === ' ' || char === '\n' || char === '\r' || char === '\t';
   }
 
   function skipWhiteSpace() {
@@ -74,21 +78,21 @@ export function parse(source: string): IElement {
   }
 
   function neutral() {
-    let text = ''
+    let text = '';
     if (!eof() && char !== '<') {
-      text += char
-      next()
+      text += char;
+      next();
     }
     if (text.length > 0) {
       const textNode: IText = {
         tagName: 'text',
         properties: {},
         value: text,
-      }
-      currentElement.children.push(textNode)
+      };
+      currentElement.children.push(textNode);
     }
     if (char === '<') {
-      tag()
+      tag();
     }
   }
 
@@ -96,50 +100,50 @@ export function parse(source: string): IElement {
     let value = '';
     if (char === '"' || char === "'") {
       const startQuote = char;
-      next() // skip quote
+      next(); // skip quote
       while (!eof() && char !== startQuote) {
         value += char;
-        next()
+        next();
       }
-      next() // skip quote
+      next(); // skip quote
     }
     return value;
   }
 
   function comment() {
     next(); // skip !
-    next() // skip -
-    next() // skip -
+    next(); // skip -
+    next(); // skip -
 
     while (!eof()) {
       if (char === '-') {
         if (peek(1) === '-' && peek(2) === '>') {
-          next() // skip -
-          next() // skip -
-          next() // skip >
+          next(); // skip -
+          next(); // skip -
+          next(); // skip >
           break;
         }
       }
-      next()
+      next();
     }
   }
 
   function doctype() {
-    while (!eof() && char == '>') {
-      next()
+    while (!eof() && char === '>') {
+      next();
     }
-    next() // skip >
+    next(); // skip >
   }
 
   function header() {
-    next() // skip ?
+    next(); // skip ?
     while (!eof()) {
       if (char === '?' && peek(1) === '>') {
-        next() // skip ?
-        next() // skip >
+        next(); // skip ?
+        next(); // skip >
         break;
       }
-      next()
+      next();
     }
   }
 
@@ -151,7 +155,7 @@ export function parse(source: string): IElement {
       const attr = string();
       skipWhiteSpace();
       if (char === '=') {
-        next()
+        next();
         skipWhiteSpace();
         const value = quoteString();
         skipWhiteSpace();
@@ -164,34 +168,40 @@ export function parse(source: string): IElement {
   }
 
   function close() {
-    next() // skip /
-    const name = string()
+    next(); // skip /
+    const name = string();
     if (currentElement.tagName !== name) {
-      throw SyntaxError(`Expect close tag ${currentElement.tagName}`)
+      throw SyntaxError(`Expect close tag ${currentElement.tagName}`);
     }
-    skipWhiteSpace()
-    next() // skip >
-    stack.pop()
-    currentElement = stack[stack.length - 1]
+    skipWhiteSpace();
+    next(); // skip >
+    stack.pop();
+    currentElement = stack[stack.length - 1];
   }
 
   function tag() {
-    next()
+    next();
     if (char === '?') {
-      header()
+      header();
       return;
     }
 
     if (char === '!') {
       if (peek(1) === '-' && peek(2) === '-') {
-        comment()
+        comment();
         return;
       }
-      if (peek(1) == 'd') {
-        if (peek(2) === 'o' && peek(3) === 'c' && peek(4) === 't' && peek(5) === 'y' && peek(6) === 'p' && peek(7) === 'e') {
-          doctype()
-          return
-
+      if (peek(1) === 'd') {
+        if (
+          peek(2) === 'o' &&
+          peek(3) === 'c' &&
+          peek(4) === 't' &&
+          peek(5) === 'y' &&
+          peek(6) === 'p' &&
+          peek(7) === 'e'
+        ) {
+          doctype();
+          return;
         }
       }
       if (peek(1) === '[') {
@@ -200,65 +210,65 @@ export function parse(source: string): IElement {
     }
 
     if (char === '/') {
-      close()
-      return
+      close();
+      return;
     }
 
-    const name = string()
+    const name = string();
 
-    const attrs = getAttributes()
+    const attrs = getAttributes();
     const element: IElement = {
       tagName: name,
       properties: attrs,
-      children: []
-    }
+      children: [],
+    };
 
-    currentElement.children.push(element)
+    currentElement.children.push(element);
 
-    let selfClose = false
+    let selfClose = false;
 
     if (char === '/') {
       selfClose = true;
-      next()
+      next();
     }
     if (!selfClose) {
-      stack.push(element)
-      currentElement = element
+      stack.push(element);
+      currentElement = element;
     }
     if (char !== '>') {
-      throw SyntaxError('Expect ">"')
+      throw SyntaxError('Expect ">"');
     }
     next(); // skip >
   }
 
   while (!eof()) {
-    skipWhiteSpace()
-    neutral()
+    skipWhiteSpace();
+    neutral();
   }
 
-  return root
+  return root;
 }
-
 
 export function stringify(root: IElement) {
   function buildSvgNode(node: ISvgElement) {
     if (node.tagName === 'text') {
-      return (node as IText).value
+      return (node as IText).value;
     }
-    const element = node as IElement
-    let segment = `<${element.tagName} ${Object.entries(element.properties).map(([attr, value]) => `${attr}="${value}"`).join(' ')
-      }`;
+    const element = node as IElement;
+    let segment = `<${element.tagName} ${Object.entries(element.properties)
+      .map(([attr, value]) => `${attr}="${value}"`)
+      .join(' ')}`;
 
-    const hasChildren = element.children.length > 0
+    const hasChildren = element.children.length > 0;
     if (hasChildren) {
-      segment += '>'
-      segment += element.children.map(buildSvgNode).join('')
-      segment += `</${element.tagName}>`
+      segment += '>';
+      segment += element.children.map(buildSvgNode).join('');
+      segment += `</${element.tagName}>`;
     } else {
-      segment += "/>"
+      segment += '/>';
     }
-    return segment
+    return segment;
   }
 
-  return root.children.map(buildSvgNode).join('')
+  return root.children.map(buildSvgNode).join('');
 }

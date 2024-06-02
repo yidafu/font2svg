@@ -17,8 +17,8 @@ class FontGlyphDTO(
         charCode = glyph.charCode,
         charText = glyph.charText,
         svg = FontSvgGenerator.glyphToSvgString(glyph.toSvgGlyph(), 16, "currentColor"),
-        svgAscender = glyph.svgAscender,
-        svgDescender = glyph.svgDescender,
+        svgAscender = glyph.fontAscender,
+        svgDescender = glyph.fontDescender,
       )
     }
   }

@@ -9,16 +9,12 @@ import jakarta.persistence.Table
 class FontFace(
   @Column
   val name: String,
-
   @Column(name = "glyph_count")
   val glyphCount: Int,
-
   @Column(name = "file_size")
   val fileSize: Long,
-
   @Column(name = "preview_text")
   val previewText: String,
-
   @Column(name = "download_url")
   val downloadUrl: String,
 ) : FontBaseEntity() {

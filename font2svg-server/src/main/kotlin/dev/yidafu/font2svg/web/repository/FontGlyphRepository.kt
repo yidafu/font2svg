@@ -1,7 +1,6 @@
 package dev.yidafu.font2svg.web.repository
 
 import dev.yidafu.font2svg.web.model.FontGlyph
-import dev.yidafu.font2svg.web.model.FontTask
 import io.vertx.kotlin.coroutines.vertxFuture
 import kotlinx.coroutines.future.await
 import org.hibernate.query.Page
@@ -9,13 +8,11 @@ import org.hibernate.reactive.stage.Stage
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-
-class FontGlyphRepository : KoinComponent{
-
+class FontGlyphRepository : KoinComponent {
   private val sessionFactory: Stage.SessionFactory by inject()
 
   suspend fun saveGlyphs(glyphs: List<FontGlyph>) {
-    sessionFactory.withSession {session ->
+    sessionFactory.withSession { session ->
       vertxFuture {
         session.persist(*glyphs.toTypedArray()).await()
         session.flush().await()
@@ -23,8 +20,10 @@ class FontGlyphRepository : KoinComponent{
     }.toCompletableFuture().await()
   }
 
-  suspend fun getByFontFaceAndGlyphId(faceId: Long, glyphId: Long): FontGlyph? {
-
+  suspend fun getByFontFaceAndGlyphId(
+    faceId: Long,
+    glyphId: Long,
+  ): FontGlyph? {
     return sessionFactory.withTransaction { session ->
       val builder = sessionFactory.criteriaBuilder
       val query = builder.createQuery(FontGlyph::class.java)
@@ -38,7 +37,10 @@ class FontGlyphRepository : KoinComponent{
     }.await()
   }
 
-  suspend fun getByFontFaceAndCharCode(faceId: Long, charCode: Long): FontGlyph? {
+  suspend fun getByFontFaceAndCharCode(
+    faceId: Long,
+    charCode: Long,
+  ): FontGlyph? {
     return sessionFactory.withSession { session ->
       val builder = sessionFactory.criteriaBuilder
       val query = builder.createQuery(FontGlyph::class.java)
@@ -51,7 +53,12 @@ class FontGlyphRepository : KoinComponent{
       session.createQuery(query).singleResultOrNull
     }.await()
   }
-  suspend fun getListByPage(faceId: Long, page: Int, size: Int): List<FontGlyph> {
+
+  suspend fun getListByPage(
+    faceId: Long,
+    page: Int,
+    size: Int,
+  ): List<FontGlyph> {
     return sessionFactory.withSession { session ->
       val builder = sessionFactory.criteriaBuilder
       val query = builder.createQuery(FontGlyph::class.java)

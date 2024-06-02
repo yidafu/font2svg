@@ -5,4 +5,4 @@ mkdir -p dist/cjs
 mkdir -p dist/esm
 cp -r build-cjs/src/* dist/cjs
 cp -r build-esm/src/* dist/esm
-npx tsc --emitDeclarationOnly --outDir types -p ./tsconfig.json
+npx tsc --emitDeclarationOnly --outDir types -p ./tsconfig.json --moduleResolution node16

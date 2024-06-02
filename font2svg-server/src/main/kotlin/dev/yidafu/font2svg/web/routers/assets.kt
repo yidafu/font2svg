@@ -27,16 +27,16 @@ import java.nio.file.Paths
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Duration.Companion.days
 
-val cache = InMemoryKache<String, String>(200 * 1024 * 1024) {
-  strategy = KacheStrategy.LRU
-  expireAfterAccessDuration = 3.days
-}
+val cache =
+  InMemoryKache<String, String>(200 * 1024 * 1024) {
+    strategy = KacheStrategy.LRU
+    expireAfterAccessDuration = 3.days
+  }
 
 @OptIn(ExperimentalEncodingApi::class)
 inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
   Router.router(vertx).apply {
     coroutineRouter {
-
       val logger = LoggerFactory.getLogger("asserts")
       val schemaRouter = SchemaRouter.create(vertx, SchemaRouterOptions())
       val schemaParser = SchemaParser.createDraft7SchemaParser(schemaRouter)
@@ -63,22 +63,25 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
       route("/fonts/*").handler(StaticHandler.create(FileSystemAccess.ROOT, configRepo.fontStaticAssetsPath))
 
       route("/dynamic/svg/:fontFamily/:charCode.svg")
-        .handler((ValidationHandlerBuilder.create(schemaParser)
-            .pathParameter(Parameters.optionalParam("fontFamily", stringSchema()))
-            .pathParameter(Parameters.optionalParam("charCode", numberSchema()))
-            .queryParameter(Parameters.optionalParam("fontSize", intSchema()))
-            .queryParameter(Parameters.optionalParam("color", stringSchema()))
-            .queryParameter(Parameters.optionalParam("lineHeight", stringSchema()))
-            .build()
-        )).coHandler {ctx ->
+        .handler(
+          (
+            ValidationHandlerBuilder.create(schemaParser)
+              .pathParameter(Parameters.optionalParam("fontFamily", stringSchema()))
+              .pathParameter(Parameters.optionalParam("charCode", numberSchema()))
+              .queryParameter(Parameters.optionalParam("fontSize", intSchema()))
+              .queryParameter(Parameters.optionalParam("color", stringSchema()))
+              .queryParameter(Parameters.optionalParam("lineHeight", stringSchema()))
+              .build()
+          ),
+        ).coHandler { ctx ->
           val fontFamily = ctx.pathParam("fontFamily")
           val charCode = ctx.pathParam("charCode").toLong()
           val fontSize: Int = ctx.queryParam("fontSize").let { if (it.isEmpty()) 16 else it[0].toInt() }
-          val color: String =  URLDecoder.decode(ctx.queryParam("color").let { if (it.isEmpty()) "currentColor" else it[0] }, "utf-8")
+          val color: String = URLDecoder.decode(ctx.queryParam("color").let { if (it.isEmpty()) "currentColor" else it[0] }, "utf-8")
 
           // in memory cache for performance
           val key = "$fontFamily-$charCode-$fontSize-$color"
-          cache.get(key)?.let {svg ->
+          cache.get(key)?.let { svg ->
             ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
             ctx.response().end(svg)
             return@coHandler
@@ -127,4 +130,3 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
         }
     }
   }
-
