@@ -8,7 +8,7 @@ import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 import { Button, ButtonGroup } from '@chakra-ui/react'
 import { PreviewPage } from './pages/PreviewPage'
 import { UploadPage } from './pages/UploadPage'
-import { FontListPage } from './pages/FontListPage'
+import { FontListPage } from './pages/FontListPage/FontListPage'
 
 function App() {
 
