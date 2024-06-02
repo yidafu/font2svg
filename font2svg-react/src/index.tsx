@@ -6,6 +6,8 @@ export interface ICreateComponentOptions {
 }
 
 export interface IFont2SvgProps {
+  className?: string;
+  onClick?: React.MouseEventHandler<HTMLSpanElement>,
   fontFamily: string;
   text: string;
   color?: string;
@@ -14,6 +16,7 @@ export interface IFont2SvgProps {
 }
 
 function calcSvg(svg: string, fontSize: number): string {
+  if (svg.length === 0) return ''
 
   const rootObj: IElement = parse(svg)
   const svgObj = rootObj.children[0]
@@ -30,6 +33,42 @@ function calcSvg(svg: string, fontSize: number): string {
   return stringify(rootObj)
 }
 
+function toPascalCase(str: string) {
+  return str.replace(/-(\w)/g, (_, c) => c.toUpperCase())
+}
+
+function buildJsxElement(node: IElement, key: string) {
+  if (node.tagName === 'text') return node.value
+  const props = Object.entries(node.properties ?? {})
+    .map<[string, string]>(([k, v]) => [toPascalCase(k), v as string])
+    .reduce((acc, [k, v]) => {acc[k] = v; return acc}, {} as Record<string, string>)
+  props.key = key
+  return React.createElement(
+    node.tagName,
+    props,
+    node.children?.map((child, index) => buildJsxElement(child, index)) ?? [])
+}
+
+function Svg2Jsx(props: { svg: string, size: number }) {
+  const { svg, size } = props;
+
+  if (svg.length === 0) return ''
+
+  const rootObj: IElement = parse(svg)
+  const svgObj = rootObj.children[0]
+  svgObj.properties['fill'] = 'currentColor'
+  svgObj.properties['style'] = { display: 'inline' }
+  const viewBox = svgObj.properties.viewBox ?? ''
+  const heightStr = viewBox.trim().split(' ').at(-1) ?? '1000'
+  const widthStr = viewBox.trim().split(' ').at(-2) ?? '1000'
+  const height = parseInt(heightStr, 10)
+  const fontHeight = height * size / 1000
+  const fontWidth = parseInt(widthStr, 10) / height * fontHeight
+  svgObj.properties.height = fontHeight + 'px'
+  svgObj.properties.width = fontWidth + 'px'
+  return buildJsxElement(svgObj, '0');
+}
+
 export function createComponent(option: ICreateComponentOptions) {
 
   function buildSvgUrl(fontFamily: string, char: string) {
@@ -38,27 +77,36 @@ export function createComponent(option: ICreateComponentOptions) {
   }
   return function Font2Svg(props: IFont2SvgProps) {
     const { fontFamily, text, color = '#000', fontSize = 16, fallback } = props;
-    const [svgHtml, setSvgHtml] = useState('')
     const [originSvgList, setOriginSvgList] = useState<string[]>([])
     useEffect(() => {
       async function fetchSvg() {
-        const promises = text.split('').map<Promise<string>>(char => {
-          const svgUrl = buildSvgUrl(fontFamily, char)
-          return fetch(svgUrl).then(res => res.text())
-        })
-        const svgTextList = await Promise.all(promises)
+        if (!fontFamily) return;
+        if (!text) return;
+        try {
 
-        setOriginSvgList(svgTextList)
+          const promises = text.split('').map<Promise<string>>(char => {
+            const svgUrl = buildSvgUrl(fontFamily, char)
+            return fetch(svgUrl).then(res => res.text())
+          })
+          const svgTextList = await Promise.all(promises)
+
+          setOriginSvgList(svgTextList.filter(svg => svg.length > 0))
+        } catch (e) {
+          console.error(e)
+        }
+
       }
 
       fetchSvg()
-    }, [text])
+    }, [text, fontFamily])
 
-    useEffect(() => {
-      const html = originSvgList.map(svg => calcSvg(svg, fontSize)).join('')
-      setSvgHtml(html)
-    }, [fontSize, color, originSvgList])
-    return <span style={{ color }} dangerouslySetInnerHTML={{ __html: svgHtml }}></span>
+    return <span
+      onClick={props.onClick}
+      style={{ color }}
+      className={props.className ?? ''}
+    >
+      {originSvgList.map((svg,index) => <Svg2Jsx key={index} svg={svg} size={fontSize}/>)}
+    </span>
   }
 }
 
@@ -70,10 +118,12 @@ export function createDynamicComponent(option: ICreateComponentOptions) {
   return function Font2Svg(props: IFont2SvgProps) {
     const { fontFamily, text, color = '#000', fontSize = 16, fallback } = props;
 
-    return <span>
+    return <span
+      onClick={props.onClick}
+      className={props.className ?? ''}>
       {text.split('').map(char => {
         const svgUrl = buildDynamicSvgUrl(fontFamily, char, fontSize, color)
-        return <img src={svgUrl} alt={char} />
+        return <img key={char} style={{ display: 'inline-block' }} src={svgUrl} alt={char} />
       })}
     </span>
   }
