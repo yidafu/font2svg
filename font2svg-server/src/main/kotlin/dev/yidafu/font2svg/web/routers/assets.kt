@@ -90,6 +90,7 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
 
           service.getGlyph(fontFamily, charCode, fontSize, color)?.let { svg ->
             ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
+            cache.put(key, svg)
             ctx.response().end(svg)
           } ?: run {
             ctx.response().statusCode = 404
