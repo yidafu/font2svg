@@ -49,19 +49,20 @@ export const options = {
   // }
 };
 
+const charCodeList = JSON.parse(open('./charCodes.json'))
 // The function that defines VU logic.
 //
 // See https://grafana.com/docs/k6/latest/examples/get-started-with-k6/ to learn more
 // about authoring k6 scripts.
 //
 export default function () {
-  const charCode = randomIntBetween(1, 65510);
+  const charCode =  charCodeList[Math.floor(Math.random() * charCodeList.length)];
   // http.get(`http://127.0.0.1:8888/asserts/svg/JinBuTi//${charCode}.svg`, {
   //   tags: {
   //     StaticFontSvg: `${charCode}`
   //   }
   // })
-  http.get(`http://127.0.0.1:8888/asserts/dynamic/svg/JinBuTi//${charCode}.svg`, {
+  http.get(`http://127.0.0.1:8888/asserts/dynamic/svg/JinBuTi/${charCode}.svg`, {
     tags: {
       StaticFontSvg: `${charCode}`
     }
