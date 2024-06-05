@@ -33,7 +33,10 @@ val cache =
     expireAfterAccessDuration = 3.days
   }
 
-@OptIn(ExperimentalEncodingApi::class)
+val cache404 = InMemoryKache<String, Boolean>(1024 * 1024)  {
+  strategy = KacheStrategy.FIFO
+  expireAfterAccessDuration = 7.days
+}
 inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
   Router.router(vertx).apply {
     coroutineRouter {
@@ -71,6 +74,7 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
               .queryParameter(Parameters.optionalParam("fontSize", intSchema()))
               .queryParameter(Parameters.optionalParam("color", stringSchema()))
               .queryParameter(Parameters.optionalParam("lineHeight", stringSchema()))
+              .queryParameter(Parameters.optionalParam("underline", booleanSchema()))
               .build()
           ),
         ).coHandler { ctx ->
@@ -78,21 +82,28 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
           val charCode = ctx.pathParam("charCode").toLong()
           val fontSize: Int = ctx.queryParam("fontSize").let { if (it.isEmpty()) 16 else it[0].toInt() }
           val color: String = URLDecoder.decode(ctx.queryParam("color").let { if (it.isEmpty()) "currentColor" else it[0] }, "utf-8")
+          val underline: Boolean = ctx.queryParam("underline")?.let { arr -> arr.any { s -> s == "true" } } ?: false
 
           // in memory cache for performance
-          val key = "$fontFamily-$charCode-$fontSize-$color"
-          cache.get(key)?.let { svg ->
+          val key = "$fontFamily-$charCode-$fontSize-$color-$underline"
+          if (cache404.getIfAvailable(key) != null) {
+            ctx.response().statusCode = 404
+            ctx.response().end()
+            return@coHandler
+          }
+          cache.getIfAvailable(key)?.let { svg ->
             ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
             ctx.response().end(svg)
             return@coHandler
           }
           val service = FontService()
 
-          service.getGlyph(fontFamily, charCode, fontSize, color)?.let { svg ->
+          service.getGlyph(fontFamily, charCode, fontSize, color, underline)?.let { svg ->
             ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
             cache.put(key, svg)
             ctx.response().end(svg)
           } ?: run {
+            cache404.put(key, true)
             ctx.response().statusCode = 404
             ctx.response().end()
           }
@@ -104,6 +115,12 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
         .handler(StaticHandler.create(FileSystemAccess.ROOT, configRepo.svgStaticAssetsPath))
         // 本地资源不存在，从数据库获取
         .coHandler { ctx ->
+          val path = ctx.normalizedPath()
+          cache404.getIfAvailable(path)?.let {
+            ctx.response().statusCode = 404
+            ctx.response().end()
+            return@coHandler
+          }
           val paths = ctx.normalizedPath().split("/").filter { it.isNotEmpty() }
           if (paths.size != 4) {
             ctx.json(InvalidUrl())
@@ -125,6 +142,7 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
             ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, MimeMapping.getMimeTypeForExtension("svg"))
             ctx.response().end(svg)
           } ?: run {
+            cache404.put(path, true)
             ctx.response().statusCode = 404
             ctx.response().end()
           }
