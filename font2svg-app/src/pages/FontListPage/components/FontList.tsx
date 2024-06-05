@@ -11,7 +11,7 @@ import {
   Tag,
 } from '@chakra-ui/react';
 import { useCallback, useEffect, useState } from 'react';
-import { Font2Svg } from '../../../components/Font2Fvg';
+import { SvgText } from '../../../components/Font2Fvg';
 import { formatFileSize } from '../../../utils/file';
 import {
   FontTaskStatus,
@@ -100,7 +100,7 @@ export function FontList(props: IFontListProps) {
                 <Td isNumeric>{fontFace.glyphCount}个</Td>
                 <Td isNumeric>{task.generateCount}个</Td>
                 <Td>
-                  <Font2Svg
+                  <SvgText
                     fontFamily={fontFace.name}
                     fontSize={16}
                     text={fontFace.previewText}

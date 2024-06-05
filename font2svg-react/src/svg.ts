@@ -13,7 +13,7 @@ export interface INode {
   properties: Record<string, string>;
 }
 
-type ISvgElement = IElement | IText;
+export type ISvgElement = IElement | IText;
 
 const CHAR_A = 65;
 const CHAT_Z = 90;
@@ -271,4 +271,12 @@ export function stringify(root: IElement) {
   }
 
   return root.children.map(buildSvgNode).join('');
+}
+
+export function isText(node: ISvgElement): node is IText {
+  return node.tagName === 'text';
+}
+
+export function isElement(node: ISvgElement): node is IElement {
+  return node.tagName !== 'text';
 }

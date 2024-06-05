@@ -2,6 +2,7 @@ package dev.yidafu.font2svg.core
 
 import com.github.nwillc.ksvg.RenderMode
 import com.github.nwillc.ksvg.elements.SVG
+import dev.yidafu.font2svg.dev.yidafu.font2svg.core.Matrix2d
 import dev.yidafu.font2svg.dev.yidafu.font2svg.core.SvgGlyph
 import dev.yidafu.font2svg.dev.yidafu.font2svg.core.SvgLineCmd
 import dev.yidafu.font2svg.dev.yidafu.font2svg.core.Vertex
@@ -155,7 +156,7 @@ class FontSvgGenerator(fontFilepath: String) : Closeable {
           height = "${ratio * fontSize}px"
           viewBox = glyph.viewBox
           attributes["data-underline-pos"] = glyph.underlinePos.toString()
-          attributes["data-underline-thickness"] = glyph.underlinePos.toString()
+          attributes["data-underline-thickness"] = glyph.underlineThickness.toString()
           attributes["data-units-per-em"] = glyph.unitsPerEN.toString()
           if (glyph.path.isNotEmpty()) {
             path {
@@ -173,8 +174,8 @@ class FontSvgGenerator(fontFilepath: String) : Closeable {
             }
           }
           if (underline) {
+            val yOffset = (-glyph.underlinePos).toString()
             line {
-              val yOffset = (glyph.ascender + glyph.underlinePos).toString()
               x1 = "0"
               y1 = yOffset
               x2 = (glyph.maxAdvanceWidth).toString()

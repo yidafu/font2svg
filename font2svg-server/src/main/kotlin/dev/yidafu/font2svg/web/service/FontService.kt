@@ -17,13 +17,14 @@ class FontService : KoinComponent {
     charCode: Long,
     fontSize: Int,
     color: String,
+    underline: Boolean= false,
   ): String? {
     val fontFace = faceRepo.getByName(fontFamily) ?: return null
     val glyphRepo = FontGlyphRepository()
     val glyph = glyphRepo.getByFontFaceAndCharCode(fontFace.id!!, charCode)
     if (glyph != null) {
       val svgGlyph = glyph.toSvgGlyph()
-      val svgContent = FontSvgGenerator.glyphToSvgString(svgGlyph, fontSize, color)
+      val svgContent = FontSvgGenerator.glyphToSvgString(svgGlyph, fontSize, color, underline)
       return svgContent
     }
     return null
