@@ -7,6 +7,7 @@ import {
   NumberDecrementStepper,
   ButtonGroup,
   Button,
+  Switch,
 } from '@chakra-ui/react';
 
 import { Input } from '@chakra-ui/react';
@@ -16,20 +17,21 @@ import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
 import { FormRow } from '../components/FormRow';
 import { ColorPicker } from '../components/ColorPicker';
 import { PreviewCode } from '../components/PreviewCode';
-import { DynamicFont2Svg, Font2Svg } from '../components/Font2Fvg';
+import { DynamicSvgText, SvgText } from '../components/Font2Fvg';
 import { IFontFace, getFontList } from '../api';
 
 SyntaxHighlighter.registerLanguage('jsx', jsx);
 
 const STATIC_IMPORT = `import { createComponent } from 'font2svg-react';
-const Font2Svg = createComponent({ assertUrl: 'http://127.0.0.1:8888/asserts' });`;
+const SvgText = createComponent({ assertUrl: 'http://127.0.0.1:8888/asserts' });`;
 
 const DYNAMIC_IMPORT = `import { createDynamicComponent } from 'font2svg-react';
-const DynamicFont2Svg = createDynamicComponent({ assertUrl: 'http://127.0.0.1:8888/asserts' });`;
+const DynamicSvgText = createDynamicComponent({ assertUrl: 'http://127.0.0.1:8888/asserts' });`;
 export interface IFontStyle {
   fontSize: number;
   color: string;
   fontFamily: string;
+  underline: boolean;
 }
 
 export interface IPreviewFontsProps {
@@ -46,7 +48,7 @@ function PreviewFonts(props: IPreviewFontsProps) {
   return (
     <div>
       {fonts.map((font) => (
-        <Font2Svg
+        <SvgText
           key={font.id}
           onClick={() => props.onChange(font.name)}
           fontFamily={font.name}
@@ -65,17 +67,19 @@ export function PreviewPage() {
     fontFamily: '',
     fontSize: 32,
     color: '#333',
+    underline: false,
   });
   const [isStatic, setIsStatic] = useState(true);
   const [text, setText] = useState('预览文本');
 
-  const componentCodeString = `<${isStatic ? 'Font2Svg' : 'DynamicFont2Svg'}
+  const componentCodeString = `<${isStatic ? 'SvgText' : 'DynamicSvgText'}
   fontFamily='${fontStyle.fontFamily}'
   fontSize={${fontStyle.fontSize}}
   color='${fontStyle.color}'
   text='${text}'
 />`;
-  const updateFont = useCallback((key: string, value: string | number) => {
+  const updateFont = useCallback((key: string, value: string | number | boolean) => {
+    console.log(key, value)
     setFontStyle((oldStyle) => ({ ...oldStyle, [key]: value }));
   }, []);
 
@@ -104,6 +108,9 @@ export function PreviewPage() {
           value={fontStyle.color}
           onChange={(color) => updateFont('color', color)}
         />
+      </FormRow>
+      <FormRow label="下划线">
+        <Switch id='font-underline' value={fontStyle.underline} onChange={evt => updateFont('underline', evt.target.checked)} />
       </FormRow>
 
       <FormRow
@@ -149,18 +156,20 @@ export function PreviewPage() {
       <FormRow label="效果预览">
         <div className="flex justify-center p-4 border border-black border-dashed">
           {isStatic ? (
-            <Font2Svg
+            <SvgText
               fontFamily={fontStyle.fontFamily}
               fontSize={fontStyle.fontSize}
               color={fontStyle.color}
               text={text}
+              underline={fontStyle.underline}
             />
           ) : (
-            <DynamicFont2Svg
+            <DynamicSvgText
               fontFamily={fontStyle.fontFamily}
               fontSize={fontStyle.fontSize}
               color={fontStyle.color}
               text={text}
+              underline={fontStyle.underline}
             />
           )}
         </div>

@@ -26,7 +26,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import { Font2Svg } from '../../../components/Font2Fvg';
+import { SvgText } from '../../../components/Font2Fvg';
 import { formatFileSize } from '../../../utils/file';
 import {
   IFontFace,
@@ -116,7 +116,7 @@ export function FontDetail(props: { onBack(): void; fontFaceId: number }) {
             {fontFace.name}
             --
             {fontFace.name ? (
-              <Font2Svg
+              <SvgText
                 fontFamily={fontFace.name}
                 text={fontFace.previewText}
                 fontSize={24}
@@ -168,7 +168,7 @@ export function FontDetail(props: { onBack(): void; fontFaceId: number }) {
                   <Td isNumeric>{glyph.svgAscender}</Td>
                   <Td isNumeric>{glyph.svgDescender}</Td>
                   <Td>
-                    <Font2Svg
+                    <SvgText
                       fontFamily={fontFace.name}
                       fontSize={16}
                       text={glyph.charText}
