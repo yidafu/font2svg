@@ -7,10 +7,10 @@
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "require": "./dist/cjs/index.js",
+      "types": "./types/index.d.ts"
     }
   },
-  "types": "./types/index.d.ts",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -21,7 +21,9 @@
     "react-dom": "^18.3.1"
   },
   "files": [
-    "dist"
+    "dist",
+    "types",
+    "README.md"
   ],
   "scripts": {
     "prepare": "husky install",
