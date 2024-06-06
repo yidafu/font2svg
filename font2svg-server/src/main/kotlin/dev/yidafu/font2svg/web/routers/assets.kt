@@ -63,7 +63,9 @@ inline fun CoroutineRouterSupport.createAssetRoute(vertx: Vertx): Router =
         ctx.next()
       }
 
-      route("/fonts/*").handler(StaticHandler.create(FileSystemAccess.ROOT, configRepo.fontStaticAssetsPath))
+      route("/fonts/*").handler(StaticHandler
+        .create(FileSystemAccess.ROOT, configRepo.fontStaticAssetsPath)
+        .setCachingEnabled(true))
 
       route("/dynamic/svg/:fontFamily/:charCode.svg")
         .handler(

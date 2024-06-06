@@ -233,3 +233,4 @@ gradle-app.setting
 local.*
 font2svg-server/font2svg2/
 font2svg-server/font2svg/
+font2svg-server/src/main/resources/webroot

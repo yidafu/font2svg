@@ -18,10 +18,12 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.LoggerHandler
+import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.ext.web.validation.BadRequestException
 import io.vertx.ext.web.validation.BodyProcessorException
 import io.vertx.ext.web.validation.ParameterProcessorException
 import io.vertx.ext.web.validation.RequestPredicateException
+import io.vertx.kotlin.core.Vertx
 import io.vertx.kotlin.coroutines.CoroutineRouterSupport
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.coAwait
@@ -87,8 +89,6 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
     }
 
     router.route().handler(LoggerHandler.create())
-
-    router.route("/asserts/*").subRouter(createAssetRoute(vertx))
     router.route("/fonts/*").subRouter(createFontRoute(vertx))
     router.route("/tasks/*").subRouter(createTaskRoute(vertx))
     router.route("/files/*").subRouter(createFileRoute(vertx))
@@ -97,9 +97,6 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
       ctx.response().end("get request!")
     }
 
-    router.route("/").handler { ctx ->
-      ctx.response().end("Holle Font2svg")
-    }
     router.errorHandler(
       400,
     ) { ctx: RoutingContext ->
@@ -116,7 +113,13 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
         }
       }
     }
-    server.requestHandler(router)
+    val apiRouter = Router.router(vertx)
+
+    apiRouter.route("/asserts/*").subRouter(createAssetRoute(vertx))
+    apiRouter.route("/api/*").subRouter(router)
+    apiRouter.route("/*").handler(StaticHandler.create("webroot"))
+
+    server.requestHandler(apiRouter)
       .listen(config.serverPort) { http ->
         if (http.succeeded()) {
           logger.info("HTTP server started on port 8888")
