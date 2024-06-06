@@ -110,7 +110,7 @@ export function PreviewPage() {
         />
       </FormRow>
       <FormRow label="下划线">
-        <Switch id='font-underline' value={fontStyle.underline} onChange={evt => updateFont('underline', evt.target.checked)} />
+        <Switch id='font-underline' value={String(fontStyle.underline)} onChange={evt => updateFont('underline', evt.target.checked)} />
       </FormRow>
 
       <FormRow

@@ -1,30 +1,14 @@
-import { SyntheticEvent, forwardRef, useEffect, useRef, useState } from 'react';
-import cn from 'classname';
-import { request } from '../utils/request';
-import { FormErrorMessage, useToast } from '@chakra-ui/react';
-import { UseFormRegister, UseFormRegisterReturn } from 'react-hook-form';
+import { forwardRef, useRef, useState } from 'react';
+import cn from 'classnames';
+import { useToast } from '@chakra-ui/react';
+import { UseFormRegisterReturn } from 'react-hook-form';
+import { uploadFileRequest } from '../api';
 
-export interface IUploadResult {
-  filename: string;
-  url: string;
-  size: number;
-}
-
-async function uploadFileRequest(file: File) {
-  const formData = new FormData();
-  formData.append('file-uploads', file);
-
-  const data = await request<IUploadResult>('./files/upload', {
-    method: 'POST',
-    body: formData,
-  });
-  return data;
-}
 
 export interface IUploadFontFileProps {}
 
-export const UploadFontFile = forwardRef<HTMLDivElement>(function (
-  props: IUploadFontFileProps & UseFormRegisterReturn<'fontUrl'>,
+export const UploadFontFile = forwardRef<HTMLDivElement, IUploadFontFileProps & UseFormRegisterReturn<'fontUrl'>>(function (
+  props,
   uploadRef
 ) {
   const fileRef = useRef<HTMLInputElement | null>(null);

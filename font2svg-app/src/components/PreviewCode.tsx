@@ -2,8 +2,7 @@ import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
 import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
-import { useToast, useClipboard, useEditable } from '@chakra-ui/react';
-import copy from 'clipboard-copy';
+import { useToast, useClipboard } from '@chakra-ui/react';
 import { useEffect } from 'react';
 
 SyntaxHighlighter.registerLanguage('jsx', jsx);
