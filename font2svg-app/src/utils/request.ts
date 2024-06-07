@@ -8,7 +8,7 @@ export async function request<T>(
   url: string,
   options: RequestInit
 ): Promise<T> {
-  const resp = await fetch(url, options);
+  const resp = await fetch('/api' + url, options);
   if (resp.status >= 400) {
     throw new Error(resp.statusText);
   }

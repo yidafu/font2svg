@@ -5,9 +5,26 @@ export interface IFontTask {
   fontFamily: string;
   previewText: string;
 }
+export interface IUploadResult {
+  filename: string;
+  url: string;
+  size: number;
+}
+
+export async function uploadFileRequest(file: File) {
+  const formData = new FormData();
+  formData.append('file-uploads', file);
+
+  const data = await request<IUploadResult>('/files/upload', {
+    method: 'POST',
+    body: formData,
+  });
+  return data;
+}
+
 
 export function createTask(task: IFontTask) {
-  return request('./tasks/', {
+  return request('/tasks/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -61,7 +78,7 @@ export interface IFontTask {
 }
 
 export function getFontList() {
-  return request<IFontFace[]>('./fonts/all', { method: 'GET' });
+  return request<IFontFace[]>('/fonts/all', { method: 'GET' });
 }
 
 export function getFonGlyphByPage(
@@ -76,9 +93,9 @@ export function getFonGlyphByPage(
 }
 
 export function getFontById(id: number) {
-  return request<IFontFace>('./fonts/' + id, { method: 'GET' });
+  return request<IFontFace>('/fonts/' + id, { method: 'GET' });
 }
 
 export function removeFontFace(id: number) {
-  return request<IFontFace[]>('./fonts/' + id, { method: 'DELETE' });
+  return request<IFontFace[]>('/fonts/' + id, { method: 'DELETE' });
 }

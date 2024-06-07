@@ -117,8 +117,8 @@ export function FontDetail(props: { onBack(): void; fontFaceId: number }) {
             --
             {fontFace.name ? (
               <SvgText
-                fontFamily={fontFace.name}
-                text={fontFace.previewText}
+                fontFamily={fontFace.name ?? ''}
+                text={fontFace.previewText ?? '/'}
                 fontSize={24}
                 color="#333"
               />
@@ -169,7 +169,7 @@ export function FontDetail(props: { onBack(): void; fontFaceId: number }) {
                   <Td isNumeric>{glyph.svgDescender}</Td>
                   <Td>
                     <SvgText
-                      fontFamily={fontFace.name}
+                      fontFamily={fontFace.name ?? ''}
                       fontSize={16}
                       text={glyph.charText}
                       color="#999"

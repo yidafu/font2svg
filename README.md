@@ -9,6 +9,21 @@ Inspire by <https://www.bilibili.com/read/cv26464950/>
 ![](./screen-recording.gif)
 
 
+# Usage
+
+build jar
+
+```bash
+bash ./build.sh
+```
+
+execute jar
+```bash
+java -jar ./font2svg-server/build/libs/font2svg-server-1.0.0-SNAPSHOT-fat.jar
+```
+
+visit <http://127.0.0.1:8888/index.html>
+
 # Benchmark
 
 load testing by [k6](https://k6.io/).
