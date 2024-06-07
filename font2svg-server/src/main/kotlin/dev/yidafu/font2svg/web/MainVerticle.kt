@@ -2,6 +2,8 @@ package dev.yidafu.font2svg.web
 
 import dev.yidafu.font2svg.web.beean.ErrorResponse
 import dev.yidafu.font2svg.web.config.Font2SvgConfig
+import dev.yidafu.font2svg.web.config.Font2SvgConfig.Companion.ENV_FONT2SVG_CONFIG_PATH
+import dev.yidafu.font2svg.web.config.Font2SvgConfig.Companion.PROPERTY_FONT2SVG_CONFIG_PATH
 import dev.yidafu.font2svg.web.repository.ConfigRepository
 import dev.yidafu.font2svg.web.repository.FontFaceRepository
 import dev.yidafu.font2svg.web.repository.FontGlyphRepository
@@ -23,7 +25,6 @@ import io.vertx.ext.web.validation.BadRequestException
 import io.vertx.ext.web.validation.BodyProcessorException
 import io.vertx.ext.web.validation.ParameterProcessorException
 import io.vertx.ext.web.validation.RequestPredicateException
-import io.vertx.kotlin.core.Vertx
 import io.vertx.kotlin.coroutines.CoroutineRouterSupport
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.coAwait
@@ -40,6 +41,10 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
 
   private val logger: Logger = LoggerFactory.getLogger(MainVerticle::class.java)
 
+  private fun getConfigPath(): String {
+    return System.getenv(ENV_FONT2SVG_CONFIG_PATH) ?: System.getProperty(PROPERTY_FONT2SVG_CONFIG_PATH) ?: "font2svg.yaml"
+  }
+
   override suspend fun start() {
     val retriever =
       ConfigRetriever.create(
@@ -49,7 +54,7 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
             .setType("file")
             .setFormat("yaml")
             .setOptional(true)
-            .setConfig(JsonObject().put("path", "font2svg.yaml")),
+            .setConfig(JsonObject().put("path", getConfigPath())),
         ),
       )
     val configObj = retriever.config.coAwait()
@@ -122,7 +127,7 @@ class MainVerticle : CoroutineVerticle(), CoroutineRouterSupport {
     server.requestHandler(apiRouter)
       .listen(config.serverPort) { http ->
         if (http.succeeded()) {
-          logger.info("HTTP server started on port 8888")
+          logger.info("HTTP server started on port ${config.serverPort}")
         }
       }
   }

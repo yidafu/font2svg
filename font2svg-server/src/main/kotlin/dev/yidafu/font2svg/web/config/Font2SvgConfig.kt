@@ -27,7 +27,7 @@ class Font2SvgConfig {
       path.toString()
     }
 
-  var serverPort = 8888
+  var serverPort: Int = 8888
 
   private fun ensureDirectory(dir: Path) {
     val file = dir.toFile()
@@ -63,7 +63,18 @@ class Font2SvgConfig {
         }
       }
 
+      // system properties override
+      System.getProperty(CONFIG_SERVER_PORT)?.toInt()?.let {
+        config.serverPort = it
+      }
+
       return config
     }
+
+    const val ENV_FONT2SVG_CONFIG_PATH ="FONT2SVG_CONFIG_PATH"
+
+    const val PROPERTY_FONT2SVG_CONFIG_PATH = "font2svg-config-path"
+
+    const val CONFIG_SERVER_PORT ="server-port"
   }
 }
